@@ -1,0 +1,222 @@
+using Microsoft.AspNetCore.Mvc;
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.Model;
+using BCrypt.Net;
+using Pet.API.Services.Interfaces;
+
+namespace Pet.API.Controllers
+{
+    [Route("api/auth")]
+    [ApiController]
+    public class AuthController : ControllerBase
+    {
+        private readonly IDynamoDBContext _dynamoDBContext;
+        private readonly AmazonDynamoDBClient _client;
+        private readonly string _usersTable;
+        private readonly ILogger<AuthController> _logger;
+
+        public AuthController(IDynamoDBContext dynamoDBContext, ILogger<AuthController> logger)
+        {
+            _dynamoDBContext = dynamoDBContext;
+            _client = dynamoDBContext.Client;
+            _usersTable = dynamoDBContext.UsersTableName;
+            _logger = logger;
+        }
+
+        // POST: api/authsimple/register
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] SimpleRegisterRequest request)
+        {
+            try
+            {
+                // Check if user already exists
+                var existingUser = await GetUserByEmail(request.Email);
+                if (existingUser != null)
+                    return BadRequest(new { message = "Email already exists" });
+
+                // Generate new user
+                var userId = $"user-{Guid.NewGuid():N}";
+                var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                var apiKey = $"sk_live_{Guid.NewGuid():N}";
+
+                // Create user in DynamoDB
+                var item = new Dictionary<string, AttributeValue>
+                {
+                    { "UserId", new AttributeValue { S = userId } },
+                    { "Email", new AttributeValue { S = request.Email } },
+                    { "PasswordHash", new AttributeValue { S = passwordHash } },
+                    { "FirstName", new AttributeValue { S = request.FirstName } },
+                    { "LastName", new AttributeValue { S = request.LastName } },
+                    { "Role", new AttributeValue { S = request.Role ?? "Public" } },
+                    { "ApiKey", new AttributeValue { S = apiKey } },
+                    { "CreatedDate", new AttributeValue { S = DateTime.UtcNow.ToString("o") } },
+                    { "IsActive", new AttributeValue { BOOL = true } }
+                };
+
+                var putRequest = new PutItemRequest
+                {
+                    TableName = _usersTable,
+                    Item = item
+                };
+
+                await _client.PutItemAsync(putRequest);
+
+                _logger.LogInformation($"User {request.Email} registered successfully");
+
+                return Ok(new
+                {
+                    userId,
+                    email = request.Email,
+                    firstName = request.FirstName,
+                    lastName = request.LastName,
+                    role = request.Role ?? "Public",
+                    apiKey,
+                    message = "User registered successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Registration failed: {ex.Message}");
+                return StatusCode(500, new { message = "Registration failed", error = ex.Message });
+            }
+        }
+
+        // POST: api/authsimple/login
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] SimpleLoginRequest request)
+        {
+            try
+            {
+                // Find user by email
+                var user = await GetUserByEmail(request.Email);
+                
+                if (user == null)
+                {
+                    _logger.LogWarning($"Login failed - user not found: {request.Email}");
+                    return Unauthorized(new { message = "Invalid email or password" });
+                }
+
+                // Check if account is active
+                if (!user.IsActive)
+                {
+                    _logger.LogWarning($"Login failed - account inactive: {request.Email}");
+                    return Unauthorized(new { message = "Account is inactive" });
+                }
+
+                // Verify password
+                bool passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+                
+                if (!passwordValid)
+                {
+                    _logger.LogWarning($"Login failed - invalid password: {request.Email}");
+                    return Unauthorized(new { message = "Invalid email or password" });
+                }
+
+                _logger.LogInformation($"Login successful: {request.Email}");
+
+                return Ok(new
+                {
+                    userId = user.UserId,
+                    email = user.Email,
+                    firstName = user.FirstName,
+                    lastName = user.LastName,
+                    role = user.Role,
+                    apiKey = user.ApiKey,
+                    message = "Login successful"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Login failed: {ex.Message}");
+                return StatusCode(500, new { message = "Login failed", error = ex.Message });
+            }
+        }
+
+        // GET: api/authsimple/test
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok(new
+            {
+                message = "Simple Auth controller is working!",
+                timestamp = DateTime.UtcNow,
+                usesIdentity = false,
+                authentication = "Simple Email + Password + BCrypt"
+            });
+        }
+
+        #region Helper Methods
+
+        private async Task<SimpleUser?> GetUserByEmail(string email)
+        {
+            var scanRequest = new ScanRequest
+            {
+                TableName = _usersTable,
+                FilterExpression = "Email = :email",
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                {
+                    { ":email", new AttributeValue { S = email } }
+                }
+            };
+
+            var response = await _client.ScanAsync(scanRequest);
+            
+            if (response.Items.Count == 0)
+                return null;
+
+            var item = response.Items[0];
+            
+            return new SimpleUser
+            {
+                UserId = item.GetValueOrDefault("UserId")?.S ?? "",
+                Email = item.GetValueOrDefault("Email")?.S ?? "",
+                PasswordHash = item.GetValueOrDefault("PasswordHash")?.S ?? "",
+                FirstName = item.GetValueOrDefault("FirstName")?.S ?? "",
+                LastName = item.GetValueOrDefault("LastName")?.S ?? "",
+                Role = item.GetValueOrDefault("Role")?.S ?? "Public",
+                ApiKey = item.GetValueOrDefault("ApiKey")?.S ?? "",
+                IsActive = item.GetValueOrDefault("IsActive")?.BOOL ?? true
+            };
+        }
+
+        #endregion
+    }
+
+    // Simple DTOs
+    public class SimpleRegisterRequest
+    {
+        public required string Email { get; set; }
+        public required string Password { get; set; }
+        public required string FirstName { get; set; }
+        public required string LastName { get; set; }
+        public string? Role { get; set; } = "Public";
+    }
+
+    public class SimpleLoginRequest
+    {
+        public required string Email { get; set; }
+        public required string Password { get; set; }
+    }
+
+    public class SimpleUser
+    {
+        public string UserId { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string PasswordHash { get; set; } = "";
+        public string FirstName { get; set; } = "";
+        public string LastName { get; set; } = "";
+        public string Role { get; set; } = "Public";
+        public string ApiKey { get; set; } = "";
+        public bool IsActive { get; set; } = true;
+    }
+
+    // Extension helper
+    public static class DynamoDBExtensions
+    {
+        public static AttributeValue? GetValueOrDefault(this Dictionary<string, AttributeValue> dict, string key)
+        {
+            return dict.ContainsKey(key) ? dict[key] : null;
+        }
+    }
+}
+

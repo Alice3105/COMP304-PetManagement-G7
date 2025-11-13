@@ -1,0 +1,586 @@
+{
+  "info": {
+    "_postman_id": "pet-shelter-auth-simple-2024",
+    "name": "Pet Shelter API - Simple Authentication",
+    "description": "Simple authentication testing for Pet Shelter Management API\n\nInstructions:\n1. Update {{baseUrl}} variable with your localhost URL\n2. Run requests in order\n3. Check DynamoDB after registration\n\nAuthentication: Email + BCrypt Password Hashing\nCreated for: COMP304 Pet Management Group 7",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Test Auth Controller",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Controller is working\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.exist;",
+              "});",
+              "",
+              "pm.test(\"Uses simple auth (not Identity)\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.usesIdentity).to.be.false;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/test",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "test"]
+        },
+        "description": "Health check to verify Simple Auth controller is working"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Register - Admin User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"User ID is returned\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.userId).to.exist;",
+              "    pm.environment.set(\"adminUserId\", jsonData.userId);",
+              "});",
+              "",
+              "pm.test(\"API Key is generated\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.apiKey).to.include(\"sk_live_\");",
+              "    pm.environment.set(\"adminApiKey\", jsonData.apiKey);",
+              "});",
+              "",
+              "pm.test(\"Role is Admin\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.role).to.equal(\"Admin\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@petshelter.com\",\n  \"password\": \"Admin123!\",\n  \"firstName\": \"Sarah\",\n  \"lastName\": \"Johnson\",\n  \"role\": \"Admin\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register an Admin user - simple email + BCrypt password"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Register - Staff User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Role is Staff\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.role).to.equal(\"Staff\");",
+              "    pm.environment.set(\"staffUserId\", jsonData.userId);",
+              "    pm.environment.set(\"staffApiKey\", jsonData.apiKey);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"staff@petshelter.com\",\n  \"password\": \"Staff123!\",\n  \"firstName\": \"Maria\",\n  \"lastName\": \"Rodriguez\",\n  \"role\": \"Staff\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register a Staff user"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Register - Veterinarian",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Role is Veterinarian\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.role).to.equal(\"Veterinarian\");",
+              "    pm.environment.set(\"vetUserId\", jsonData.userId);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"vet@petshelter.com\",\n  \"password\": \"Vet123!\",\n  \"firstName\": \"Dr. Emily\",\n  \"lastName\": \"Thompson\",\n  \"role\": \"Veterinarian\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register a Veterinarian user"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Register - Third Party",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Role is ThirdParty\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.role).to.equal(\"ThirdParty\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"api@petfinder.com\",\n  \"password\": \"Petfinder123!\",\n  \"firstName\": \"Petfinder\",\n  \"lastName\": \"API Service\",\n  \"role\": \"ThirdParty\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register a Third Party API client"
+      },
+      "response": []
+    },
+    {
+      "name": "6. Login - Admin (Success)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Login successful\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include(\"Login successful\");",
+              "});",
+              "",
+              "pm.test(\"User details returned\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.email).to.equal(\"admin@petshelter.com\");",
+              "    pm.expect(jsonData.role).to.equal(\"Admin\");",
+              "    pm.expect(jsonData.apiKey).to.exist;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@petshelter.com\",\n  \"password\": \"Admin123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Login with Admin credentials"
+      },
+      "response": []
+    },
+    {
+      "name": "7. Login - Staff (Success)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Login successful\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include(\"successful\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"staff@petshelter.com\",\n  \"password\": \"Staff123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Login with Staff credentials"
+      },
+      "response": []
+    },
+    {
+      "name": "8. Login - Wrong Password (Should Fail)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "",
+              "pm.test(\"Error message returned\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include(\"Invalid\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"staff@petshelter.com\",\n  \"password\": \"WrongPassword!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Test failed login with wrong password - should return 401"
+      },
+      "response": []
+    },
+    {
+      "name": "9. Register - Duplicate Email (Should Fail)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400 Bad Request\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Duplicate email error\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include(\"already exists\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@petshelter.com\",\n  \"password\": \"Admin123!\",\n  \"firstName\": \"Duplicate\",\n  \"lastName\": \"User\",\n  \"role\": \"Staff\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Try to register with already-used email - should fail"
+      },
+      "response": []
+    },
+    {
+      "name": "10. Register - Your User (Alice)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"User registered successfully\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.email).to.equal(\"alice@petshelter.com\");",
+              "    pm.expect(jsonData.firstName).to.equal(\"Alice\");",
+              "    pm.environment.set(\"aliceUserId\", jsonData.userId);",
+              "    pm.environment.set(\"aliceApiKey\", jsonData.apiKey);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"alice@petshelter.com\",\n  \"password\": \"Alice123!\",\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Huynh\",\n  \"role\": \"Admin\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register Alice as Admin"
+      },
+      "response": []
+    },
+    {
+      "name": "11. Login - Alice (Success)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Alice logged in successfully\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.email).to.equal(\"alice@petshelter.com\");",
+              "    pm.expect(jsonData.message).to.include(\"successful\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"alice@petshelter.com\",\n  \"password\": \"Alice123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Login with Alice's credentials"
+      },
+      "response": []
+    },
+    {
+      "name": "12. Login - Non-existent User (Should Fail)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "",
+              "pm.test(\"User not found error\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include(\"Invalid\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"nonexistent@example.com\",\n  \"password\": \"Test123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Try to login with user that doesn't exist - should return 401"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://localhost:7001",
+      "type": "string"
+    }
+  ]
+}
