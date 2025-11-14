@@ -23,7 +23,7 @@ namespace Pet.API.Controllers
             _logger = logger;
         }
 
-        // POST: api/authsimple/register
+        // POST: api/auth/register
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] SimpleRegisterRequest request)
         {
@@ -81,7 +81,7 @@ namespace Pet.API.Controllers
             }
         }
 
-        // POST: api/authsimple/login
+        // POST: api/auth/login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] SimpleLoginRequest request)
         {
@@ -132,7 +132,7 @@ namespace Pet.API.Controllers
             }
         }
 
-        // GET: api/authsimple/test
+        // GET: api/auth/test
         [HttpGet("test")]
         public IActionResult Test()
         {
