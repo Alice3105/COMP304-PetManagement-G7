@@ -8,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Register DynamoDB Context
 builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
 
+// Register File Upload Service
+builder.Services.AddScoped<IFileUploadService, S3FileUploadService>();
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
