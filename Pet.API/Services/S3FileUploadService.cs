@@ -46,7 +46,6 @@ namespace Pet.API.Services
 
             try
             {
-                // Reset stream position to beginning (in case it was read for validation)
                 fileStream.Position = 0;
 
                 var putRequest = new PutObjectRequest
@@ -92,42 +91,6 @@ namespace Pet.API.Services
             if (fileStream.Length == 0)
             {
                 throw new ArgumentException("File is empty");
-            }
-
-            ValidateMimeType(fileStream, fileExtension);
-        }
-
-        private void ValidateMimeType(Stream fileStream, string fileExtension)
-        {
-            // Read first few bytes to check file signature
-            var originalPosition = fileStream.Position;
-            fileStream.Position = 0;
-
-            var buffer = new byte[8];
-            var bytesRead = fileStream.Read(buffer, 0, 8);
-            fileStream.Position = originalPosition;
-
-            if (bytesRead < 4)
-            {
-                throw new ArgumentException("File is too small or corrupted");
-            }
-
-            // Check file signatures (magic numbers)
-            bool isValidImage = false;
-
-            if (buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF)
-            {
-                isValidImage = fileExtension == ".jpg" || fileExtension == ".jpeg";
-            }
-            else if (buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47)
-            {
-                isValidImage = fileExtension == ".png";
-            }
-
-            if (!isValidImage)
-            {
-                throw new ArgumentException(
-                    $"File content does not match the file extension. Expected {fileExtension} format.");
             }
         }
 
