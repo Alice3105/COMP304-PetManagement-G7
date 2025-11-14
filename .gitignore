@@ -401,3 +401,4 @@ FodyWeavers.xsd
 appsettings.json
 appsettings.*.json
 
+/Pet.Web/appsettings.Development.json
