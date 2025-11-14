@@ -1,5 +1,7 @@
 using Pet.API.Services;
 using Pet.API.Services.Interfaces;
+using Pet.API.Repositories;
+using Pet.API.Repositories.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,8 +13,12 @@ builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
 // Register File Upload Service
 builder.Services.AddScoped<IFileUploadService, S3FileUploadService>();
 
+// Register Pet Repository 
+builder.Services.AddScoped<IPetRepository, DynamoDBPetRepository>();
+
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
