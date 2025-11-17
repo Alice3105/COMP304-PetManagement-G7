@@ -19,8 +19,9 @@ namespace Pet.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var pets = await _petApiService.GetAllPetsAsync();
-            return View(pets);
+            var allPets = await _petApiService.GetAllPetsAsync();
+           
+            return View(allPets);
         }
 
         public IActionResult Privacy()
