@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PetEntity = Pet.API.Models.Entities.Pet;
 using Pet.API.Repositories.Interfaces;
+using Pet.API.Services.Interfaces;
 
 namespace Pet.API.Controllers
 {
@@ -9,10 +10,12 @@ namespace Pet.API.Controllers
     public class PetsController : ControllerBase
     {
         private readonly IPetRepository _petRepository;
+        private readonly IDataSeedingService _dataSeedingService;
 
-        public PetsController(IPetRepository petRepository)
+        public PetsController(IPetRepository petRepository, IDataSeedingService dataSeedingService)
         {
             _petRepository = petRepository;
+            _dataSeedingService = dataSeedingService;
         }
 
         // GET: api/pets
