@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "pet-shelter-auth-simple-2024",
-    "name": "Pet Shelter API - Simple Authentication",
-    "description": "Simple authentication testing for Pet Shelter Management API\n\nInstructions:\n1. Update {{baseUrl}} variable with your localhost URL\n2. Run requests in order\n3. Check DynamoDB after registration\n\nAuthentication: Email + BCrypt Password Hashing\nCreated for: COMP304 Pet Management Group 7",
+    "_postman_id": "pet-shelter-api-2024",
+    "name": "Pet Shelter Management API",
+    "description": "Complete API collection for Pet Shelter Management System\n\nThis collection includes:\n- Authentication endpoints (Register, Login)\n- Adoption management endpoints (Create, View, Update status)\n\nInstructions:\n1. Update {{baseUrl}} variable with your localhost URL (default: https://localhost:7001)\n2. Run authentication requests first to get API keys\n3. API keys are automatically stored in collection variables\n4. Set {{petId}} variable with a valid pet ID before testing adoption endpoints\n\nAuthentication: Email + BCrypt Password Hashing with Bearer Token (API Key)\n\nEndpoints:\n- Auth: Registration and login for different user roles (Admin, Staff, Veterinarian, ThirdParty)\n- Adoptions: Create, view, and manage adoption applications\n\nCreated for: COMP304 Pet Management Group 7",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -574,6 +574,376 @@
         "description": "Try to login with user that doesn't exist - should return 401"
       },
       "response": []
+    },
+    {
+      "name": "Adoptions",
+      "item": [
+        {
+          "name": "13. Get All Adoptions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns array of adoptions\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/adoptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "adoptions"]
+            },
+            "description": "Get all adoption applications in the system"
+          },
+          "response": []
+        },
+        {
+          "name": "14. Get Adoption By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns adoption object\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('AdoptionId');",
+                  "    pm.expect(jsonData).to.have.property('PetId');",
+                  "    pm.expect(jsonData).to.have.property('Status');",
+                  "    pm.environment.set(\"adoptionId\", jsonData.AdoptionId);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/adoptions/{{adoptionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "adoptions", "{{adoptionId}}"]
+            },
+            "description": "Get a specific adoption application by ID. Note: Set adoptionId variable first or use a known ID."
+          },
+          "response": []
+        },
+        {
+          "name": "15. Get Adoptions By User ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns array of adoptions\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/adoptions/user/{{aliceUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "adoptions", "user", "{{aliceUserId}}"]
+            },
+            "description": "Get all adoption applications submitted by a specific user"
+          },
+          "response": []
+        },
+        {
+          "name": "16. Get Adoptions By Pet ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns array of adoptions\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/adoptions/pet/{{petId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "adoptions", "pet", "{{petId}}"]
+            },
+            "description": "Get all adoption applications for a specific pet. Note: Set petId variable first or use a known pet ID."
+          },
+          "response": []
+        },
+        {
+          "name": "17. Create Adoption Application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Adoption created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('AdoptionId');",
+                  "    pm.expect(jsonData.Status).to.equal('Pending');",
+                  "    pm.expect(jsonData.PetId).to.exist;",
+                  "    pm.environment.set(\"adoptionId\", jsonData.AdoptionId);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{aliceApiKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"PetId\": \"{{petId}}\",\n  \"UserId\": \"{{aliceUserId}}\",\n  \"UserEmail\": \"alice@petshelter.com\",\n  \"UserFirstName\": \"Alice\",\n  \"UserLastName\": \"Huynh\",\n  \"PhoneNumber\": \"555-1234\",\n  \"Address\": \"123 Main St, City, State 12345\",\n  \"HousingType\": \"House\",\n  \"HasYard\": true,\n  \"HasOtherPets\": false,\n  \"OtherPetsDescription\": \"\",\n  \"HasChildren\": false,\n  \"ChildrenAges\": \"\",\n  \"EmploymentStatus\": \"Full-time\",\n  \"Reason\": \"Looking for a loving companion for our family\",\n  \"Status\": \"Pending\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/adoptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "adoptions"]
+            },
+            "description": "Create a new adoption application. Note: Set petId variable first with a valid pet ID from the system."
+          },
+          "response": []
+        },
+        {
+          "name": "18. Update Adoption Status - Approve",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Adoption status updated to Approved\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.Status).to.equal('Approved');",
+                  "    pm.expect(jsonData.ReviewedBy).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Status\": \"Approved\",\n  \"ReviewedBy\": \"admin@petshelter.com\",\n  \"ReviewNotes\": \"Applicant has excellent references and suitable living situation. Approved for adoption.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/adoptions/{{adoptionId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "adoptions", "{{adoptionId}}", "status"]
+            },
+            "description": "Approve an adoption application. This will also update the pet's status to 'Adopted'. Note: Set adoptionId variable first."
+          },
+          "response": []
+        },
+        {
+          "name": "19. Update Adoption Status - Reject",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Adoption status updated to Rejected\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.Status).to.equal('Rejected');",
+                  "    pm.expect(jsonData.ReviewedBy).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Status\": \"Rejected\",\n  \"ReviewedBy\": \"admin@petshelter.com\",\n  \"ReviewNotes\": \"Living situation not suitable for this pet's needs at this time.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/adoptions/{{adoptionId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "adoptions", "{{adoptionId}}", "status"]
+            },
+            "description": "Reject an adoption application. If the pet was in 'Pending' status, it will be set back to 'Available'. Note: Set adoptionId variable first."
+          },
+          "response": []
+        },
+        {
+          "name": "20. Create Adoption - Invalid Pet ID (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Error message about pet not found\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{aliceApiKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"PetId\": \"invalid-pet-id-12345\",\n  \"UserId\": \"{{aliceUserId}}\",\n  \"UserEmail\": \"alice@petshelter.com\",\n  \"UserFirstName\": \"Alice\",\n  \"UserLastName\": \"Huynh\",\n  \"PhoneNumber\": \"555-1234\",\n  \"Address\": \"123 Main St\",\n  \"HousingType\": \"House\",\n  \"HasYard\": true,\n  \"HasOtherPets\": false,\n  \"Reason\": \"Test adoption\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/adoptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "adoptions"]
+            },
+            "description": "Try to create adoption with invalid pet ID - should return 400 Bad Request"
+          },
+          "response": []
+        }
+      ],
+      "description": "Adoption management endpoints for creating, viewing, and updating adoption applications"
     }
   ],
   "variable": [
@@ -581,6 +951,18 @@
       "key": "baseUrl",
       "value": "https://localhost:7001",
       "type": "string"
+    },
+    {
+      "key": "petId",
+      "value": "",
+      "type": "string",
+      "description": "Set this to a valid pet ID from your system"
+    },
+    {
+      "key": "adoptionId",
+      "value": "",
+      "type": "string",
+      "description": "Auto-set after creating an adoption, or set manually to test specific adoption endpoints"
     }
   ]
 }

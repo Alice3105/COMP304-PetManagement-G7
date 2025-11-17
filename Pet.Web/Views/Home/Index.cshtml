@@ -6,7 +6,7 @@
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Available Pets for Adoption</h2>
+        <h2>All Pets from the Shelter</h2>
         @if (Context.Session.GetString("Role") == "Staff" || Context.Session.GetString("Role") == "Admin")
         {
             <a asp-controller="Pets" asp-action="Create" class="btn btn-primary">
@@ -14,6 +14,21 @@
             </a>
         }
     </div>
+
+    <ul class="nav nav-tabs mb-4" id="petStatusTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="true" onclick="filterPets('all')">All</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="available-tab" data-bs-toggle="tab" data-bs-target="#available" type="button" role="tab" aria-controls="available" aria-selected="false" onclick="filterPets('Available')">Available</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" aria-controls="pending" aria-selected="false" onclick="filterPets('Pending')">Pending</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="adopted-tab" data-bs-toggle="tab" data-bs-target="#adopted" type="button" role="tab" aria-controls="adopted" aria-selected="false" onclick="filterPets('Adopted')">Adopted</button>
+        </li>
+    </ul>
 
     @if (Model == null || !Model.Any())
     {
@@ -24,43 +39,87 @@
     }
     else
     {
-        <div class="row">
-            @foreach (var pet in Model)
-            {
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        @if (pet.PhotoUrls != null && pet.PhotoUrls.Any())
-                        {
-                            <img src="@pet.PhotoUrls.First()" class="card-img-top" alt="@pet.Name" style="height: 250px; object-fit: cover;">
-                        }
-                        else
-                        {
-                            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 250px;">
-                                <span class="text-white">No Image</span>
-                            </div>
-                        }
-                        <div class="card-body">
-                            <h5 class="card-title">@pet.Name</h5>
-                            <p class="card-text">
-                                <strong>Species:</strong> @pet.Species<br />
-                                <strong>Breed:</strong> @pet.Breed<br />
-                                <strong>Age:</strong> @pet.Age year(s)<br />
-                                <strong>Gender:</strong> @pet.Gender<br />
-                                <span class="badge bg-@(pet.Status == "Pending" ? "warning" : pet.Status == "Available" ? "success" : "secondary")">@pet.Status</span>
-                            </p>
-                            <p class="card-text text-truncate">@pet.Description</p>
-                        </div>
-                        <div class="card-footer bg-transparent">
-                            <a asp-controller="Pets" asp-action="Details" asp-route-id="@pet.PetId" class="btn btn-outline-primary btn-sm">View Details</a>
+        <div class="tab-content" id="petStatusTabContent">
+            <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+                <div class="row" id="pet-container">
+                    @foreach (var pet in Model)
+                    {
+                        <div class="col-md-4 mb-4 pet-card" data-status="@pet.Status">
+                            <div class="card h-100 shadow-sm">
+                                @if (pet.PhotoUrls != null && pet.PhotoUrls.Any())
+                                {
+                                    <img src="@pet.PhotoUrls.First()" class="card-img-top" alt="@pet.Name" style="height: 250px; object-fit: cover;">
+                                }
+                                else
+                                {
+                                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 250px;">
+                                        <span class="text-white">No Image</span>
+                                    </div>
+                                }
+                                <div class="card-body">
+                                    <h5 class="card-title">@pet.Name</h5>
+                                    <p class="card-text">
+                                        <strong>Species:</strong> @pet.Species<br />
+                                        <strong>Breed:</strong> @pet.Breed<br />
+                                        <strong>Age:</strong> @pet.Age year(s)<br />
+                                        <strong>Gender:</strong> @pet.Gender<br />
+                                        <span class="badge bg-@(pet.Status == "Pending" ? "warning" : pet.Status == "Available" ? "success" : "secondary")">@pet.Status</span>
+                                    </p>
+                                    <p class="card-text text-truncate">@pet.Description</p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <a asp-controller="Pets" asp-action="Details" asp-route-id="@pet.PetId" class="btn btn-outline-primary btn-sm">View Details</a>
 
-                            @if (Context.Session.GetString("Role") == "Staff" || Context.Session.GetString("Role") == "Admin")
-                            {
-                                <a asp-controller="Pets" asp-action="Edit" asp-route-id="@pet.PetId" class="btn btn-outline-secondary btn-sm">Edit</a>
-                            }
+                                    @if (Context.Session.GetString("Role") == "Staff" || Context.Session.GetString("Role") == "Admin")
+                                    {
+                                        <a asp-controller="Pets" asp-action="Edit" asp-route-id="@pet.PetId" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                    }
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    }
                 </div>
-            }
+            </div>
         </div>
     }
 </div>
+
+@section Scripts {
+    <script>
+        function filterPets(status) {
+            const petCards = document.querySelectorAll('.pet-card');
+            let visibleCount = 0;
+
+            petCards.forEach(card => {
+                const cardStatus = card.getAttribute('data-status');
+                if (status === 'all' || cardStatus === status) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            const container = document.getElementById('pet-container');
+            let noResultsMsg = document.getElementById('no-results-message');
+            
+            if (visibleCount === 0) {
+                if (!noResultsMsg) {
+                    noResultsMsg = document.createElement('div');
+                    noResultsMsg.id = 'no-results-message';
+                    noResultsMsg.className = 'alert alert-info col-12';
+                    noResultsMsg.innerHTML = `<h4>No pets with status "${status}" found</h4><p>Please try another filter.</p>`;
+                    container.appendChild(noResultsMsg);
+                }
+            } else {
+                if (noResultsMsg) {
+                    noResultsMsg.remove();
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            filterPets('all');
+        });
+    </script>
+}
