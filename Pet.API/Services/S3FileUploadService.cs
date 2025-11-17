@@ -38,11 +38,24 @@ namespace Pet.API.Services
             // Validate file
             ValidateFile(fileStream, fileName);
 
-            // Generate unique file name
             var fileExtension = Path.GetExtension(fileName).ToLowerInvariant();
-            var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
             var targetFolder = folder ?? _defaultFolder;
-            var key = $"{targetFolder}{uniqueFileName}";
+            
+            // If folder is specified, use the provided fileName (for structured paths like pets/{PetId}/{Name}-{increment}.jpg)
+            // Otherwise, generate a unique filename for backward compatibility
+            string finalFileName;
+            if (folder != null)
+            {
+                // Use the provided fileName as-is (it should already include the extension)
+                finalFileName = fileName;
+            }
+            else
+            {
+                // Generate unique file name for backward compatibility
+                finalFileName = $"{Guid.NewGuid()}{fileExtension}";
+            }
+            
+            var key = $"{targetFolder}{finalFileName}";
 
             try
             {
@@ -53,14 +66,12 @@ namespace Pet.API.Services
                     BucketName = _bucketName,
                     Key = key,
                     InputStream = fileStream,
-                    ContentType = GetContentType(fileExtension),
-                    CannedACL = S3CannedACL.PublicRead // Make images publicly accessible
+                    ContentType = GetContentType(fileExtension)
                 };
 
                 var response = await _s3Client.PutObjectAsync(putRequest);
 
-                var region = _configuration["AWS:S3:Region"] ?? _configuration["AWS:Region"] ?? "us-east-1";
-                var url = $"https://{_bucketName}.s3.{region}.amazonaws.com/{key}";
+                var url = $"https://{_bucketName}.s3.amazonaws.com/{key}";
 
                 _logger.LogInformation($"File uploaded successfully: {key}");
 

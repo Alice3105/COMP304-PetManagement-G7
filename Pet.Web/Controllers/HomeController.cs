@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Pet.Web.Models;
+using Pet.Web.Models.ViewModels;
+using Pet.Web.Services;
 using System.Diagnostics;
 
 namespace Pet.Web.Controllers
@@ -7,15 +9,18 @@ namespace Pet.Web.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly IPetApiService _petApiService;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, IPetApiService petApiService)
         {
             _logger = logger;
+            _petApiService = petApiService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var pets = await _petApiService.GetAllPetsAsync();
+            return View(pets);
         }
 
         public IActionResult Privacy()
