@@ -1,0 +1,172 @@
+@model Pet.Web.Models.ViewModels.AdoptionViewModel
+
+@{
+    ViewData["Title"] = "Adoption Application Details";
+    var role = Context.Session.GetString("Role");
+    var isStaff = (role == "Staff" || role == "Admin");
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Adoption Application for @Model.PetName</h2>
+
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Application Status</h5>
+                </div>
+                <div class="card-body">
+                    <p>
+                        <strong>Status:</strong>
+                        @if (Model.Status == "Pending")
+                        {
+                            <span class="badge bg-warning">Pending Review</span>
+                        }
+                        else if (Model.Status == "Approved")
+                        {
+                            <span class="badge bg-success">Approved</span>
+                        }
+                        else if (Model.Status == "Rejected")
+                        {
+                            <span class="badge bg-danger">Rejected</span>
+                        }
+                    </p>
+                    <p><strong>Application Date:</strong> @Model.ApplicationDate.ToString("MMMM dd, yyyy")</p>
+
+                    @if (Model.ReviewedDate.HasValue)
+                    {
+                        <p><strong>Reviewed Date:</strong> @Model.ReviewedDate.Value.ToString("MMMM dd, yyyy")</p>
+                        <p><strong>Reviewed By:</strong> @Model.ReviewedBy</p>
+
+                        @if (!string.IsNullOrEmpty(Model.ReviewNotes))
+                        {
+                            <div class="alert alert-info mt-2">
+                                <strong>Review Notes:</strong><br />
+                                @Model.ReviewNotes
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Applicant Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Name:</dt>
+                        <dd class="col-sm-8">@Model.UserFirstName @Model.UserLastName</dd>
+
+                        <dt class="col-sm-4">Email:</dt>
+                        <dd class="col-sm-8">@Model.UserEmail</dd>
+
+                        <dt class="col-sm-4">Phone:</dt>
+                        <dd class="col-sm-8">@Model.PhoneNumber</dd>
+
+                        <dt class="col-sm-4">Address:</dt>
+                        <dd class="col-sm-8">@Model.Address</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Housing Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Housing Type:</dt>
+                        <dd class="col-sm-8">@Model.HousingType</dd>
+
+                        <dt class="col-sm-4">Has Yard:</dt>
+                        <dd class="col-sm-8">@(Model.HasYard ? "Yes" : "No")</dd>
+
+                        <dt class="col-sm-4">Employment:</dt>
+                        <dd class="col-sm-8">@Model.EmploymentStatus</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Household Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Other Pets:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.HasOtherPets)
+                            {
+                                <span>Yes - @Model.OtherPetsDescription</span>
+                            }
+                            else
+                            {
+                                <span>No</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Children:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.HasChildren)
+                            {
+                                <span>Yes - Ages: @Model.ChildrenAges</span>
+                            }
+                            else
+                            {
+                                <span>No</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Reason for Adoption</h5>
+                </div>
+                <div class="card-body">
+                    <p>@Model.Reason</p>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-3">
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+
+        @if (isStaff && Model.Status == "Pending")
+        {
+            <div class="col-md-4">
+                <div class="card shadow sticky-top" style="top: 20px;">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">Review Application</h5>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="Approve" asp-route-id="@Model.AdoptionId" method="post" class="mb-3">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label for="approveNotes" class="form-label">Approval Notes (Optional)</label>
+                                <textarea name="reviewNotes" id="approveNotes" class="form-control" rows="3" placeholder="Any notes for the applicant..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('Are you sure you want to approve this application?');">
+                                Approve Application
+                            </button>
+                        </form>
+
+                        <form asp-action="Reject" asp-route-id="@Model.AdoptionId" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label for="rejectNotes" class="form-label">Rejection Reason</label>
+                                <textarea name="reviewNotes" id="rejectNotes" class="form-control" rows="3" placeholder="Reason for rejection..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Are you sure you want to reject this application?');">
+                                Reject Application
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

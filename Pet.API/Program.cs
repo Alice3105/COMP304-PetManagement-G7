@@ -13,8 +13,9 @@ builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
 // Register File Upload Service
 builder.Services.AddScoped<IFileUploadService, S3FileUploadService>();
 
-// Register Pet Repository 
+// Register Repositories
 builder.Services.AddScoped<IPetRepository, DynamoDBPetRepository>();
+builder.Services.AddScoped<IAdoptionRepository, DynamoDBAdoptionRepository>();
 
 builder.Services.AddControllers();
 
