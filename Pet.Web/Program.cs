@@ -1,9 +1,21 @@
 using Pet.Web.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Add cookie authentication for role-based authorization
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";               // Redirect here if not logged in
+        options.AccessDeniedPath = "/Account/AccessDenied"; // Redirect here if logged in but not allowed
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.SlidingExpiration = true;
+    });
 
 // Add session support for authentication
 builder.Services.AddSession(options =>
@@ -50,6 +62,7 @@ app.UseRouting();
 
 app.UseSession();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

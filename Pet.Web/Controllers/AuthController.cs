@@ -52,7 +52,7 @@ namespace Pet.Web.Controllers
             HttpContext.Session.SetString("Email", userSession.Email);
             HttpContext.Session.SetString("FirstName", userSession.FirstName);
             HttpContext.Session.SetString("LastName", userSession.LastName);
-            HttpContext.Session.SetString("Role", userSession.Role);
+            HttpContext.Session.SetString("Role", userSession.Role);        // ?? Role stored here
             HttpContext.Session.SetString("ApiKey", userSession.ApiKey);
 
             TempData["Success"] = $"Welcome back, {userSession.FirstName}!";
@@ -103,7 +103,7 @@ namespace Pet.Web.Controllers
             HttpContext.Session.SetString("Email", userSession.Email);
             HttpContext.Session.SetString("FirstName", userSession.FirstName);
             HttpContext.Session.SetString("LastName", userSession.LastName);
-            HttpContext.Session.SetString("Role", userSession.Role);
+            HttpContext.Session.SetString("Role", userSession.Role);       // ?? Role stored here too
             HttpContext.Session.SetString("ApiKey", userSession.ApiKey);
 
             TempData["Success"] = $"Welcome, {userSession.FirstName}! Your account has been created.";
@@ -124,6 +124,14 @@ namespace Pet.Web.Controllers
             _logger.LogInformation("User logged out");
 
             return RedirectToAction("Index", "Home");
+        }
+
+        // GET: /Auth/AccessDenied
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            // View shown when user lacks proper Staff/Admin role
+            return View();
         }
     }
 }

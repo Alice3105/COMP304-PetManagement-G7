@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Pet.Web.Models.ViewModels;
 using Pet.Web.Services;
+using Pet.Web.Attributes;
+
 
 namespace Pet.Web.Controllers
 {
@@ -40,32 +42,18 @@ namespace Pet.Web.Controllers
         }
 
         // GET: /Pets/Create
+        [SessionAuthorize("Staff", "Admin")]
         public IActionResult Create()
         {
-            // Check if user is logged in and is Staff or Admin
-            var role = HttpContext.Session.GetString("Role");
-            if (string.IsNullOrEmpty(role) || (role != "Staff" && role != "Admin"))
-            {
-                TempData["Error"] = "You must be a staff member to add pets";
-                return RedirectToAction(nameof(Index));
-            }
-
             return View();
         }
 
         // POST: /Pets/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [SessionAuthorize("Staff", "Admin")]
         public async Task<IActionResult> Create(CreatePetViewModel model)
         {
-            // Check authorization
-            var role = HttpContext.Session.GetString("Role");
-            if (string.IsNullOrEmpty(role) || (role != "Staff" && role != "Admin"))
-            {
-                TempData["Error"] = "You must be a staff member to add pets";
-                return RedirectToAction(nameof(Index));
-            }
-
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -84,16 +72,9 @@ namespace Pet.Web.Controllers
         }
 
         // GET: /Pets/Edit/5
+        [SessionAuthorize("Staff", "Admin")]
         public async Task<IActionResult> Edit(string id)
         {
-            // Check authorization
-            var role = HttpContext.Session.GetString("Role");
-            if (string.IsNullOrEmpty(role) || (role != "Staff" && role != "Admin"))
-            {
-                TempData["Error"] = "You must be a staff member to edit pets";
-                return RedirectToAction(nameof(Index));
-            }
-
             if (string.IsNullOrEmpty(id))
                 return NotFound();
 
@@ -111,16 +92,9 @@ namespace Pet.Web.Controllers
         // POST: /Pets/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [SessionAuthorize("Staff", "Admin")]
         public async Task<IActionResult> Edit(string id, PetViewModel model)
         {
-            // Check authorization
-            var role = HttpContext.Session.GetString("Role");
-            if (string.IsNullOrEmpty(role) || (role != "Staff" && role != "Admin"))
-            {
-                TempData["Error"] = "You must be a staff member to edit pets";
-                return RedirectToAction(nameof(Index));
-            }
-
             if (id != model.PetId)
             {
                 TempData["Error"] = "Invalid pet ID";
@@ -147,16 +121,9 @@ namespace Pet.Web.Controllers
         // POST: /Pets/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [SessionAuthorize("Staff", "Admin")]
         public async Task<IActionResult> Delete(string id)
         {
-            // Check authorization
-            var role = HttpContext.Session.GetString("Role");
-            if (string.IsNullOrEmpty(role) || (role != "Staff" && role != "Admin"))
-            {
-                TempData["Error"] = "You must be a staff member to delete pets";
-                return RedirectToAction(nameof(Index));
-            }
-
             if (string.IsNullOrEmpty(id))
             {
                 TempData["Error"] = "Invalid pet ID";
