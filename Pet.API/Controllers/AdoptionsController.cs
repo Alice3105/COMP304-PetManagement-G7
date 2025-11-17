@@ -24,6 +24,8 @@ namespace Pet.API.Controllers
 
         // GET: api/adoptions
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<Adoption>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAllAdoptions()
         {
             try
@@ -39,8 +41,12 @@ namespace Pet.API.Controllers
         }
 
         // GET: api/adoptions/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetAdoptionById(string id)
+        [HttpGet]
+        [Route("{id}")]
+        [ProducesResponseType(typeof(Adoption), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetAdoptionById([FromRoute] string id)
         {
             try
             {
@@ -59,8 +65,11 @@ namespace Pet.API.Controllers
         }
 
         // GET: api/adoptions/user/{userId}
-        [HttpGet("user/{userId}")]
-        public async Task<IActionResult> GetAdoptionsByUserId(string userId)
+        [HttpGet]
+        [Route("user/{userId}")]
+        [ProducesResponseType(typeof(IEnumerable<Adoption>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetAdoptionsByUserId([FromRoute] string userId)
         {
             try
             {
@@ -75,8 +84,11 @@ namespace Pet.API.Controllers
         }
 
         // GET: api/adoptions/pet/{petId}
-        [HttpGet("pet/{petId}")]
-        public async Task<IActionResult> GetAdoptionsByPetId(string petId)
+        [HttpGet]
+        [Route("pet/{petId}")]
+        [ProducesResponseType(typeof(IEnumerable<Adoption>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetAdoptionsByPetId([FromRoute] string petId)
         {
             try
             {
@@ -92,6 +104,9 @@ namespace Pet.API.Controllers
 
         // POST: api/adoptions
         [HttpPost]
+        [ProducesResponseType(typeof(Adoption), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateAdoption([FromBody] Adoption adoption)
         {
             try
@@ -118,8 +133,13 @@ namespace Pet.API.Controllers
         }
 
         // PUT: api/adoptions/{id}/status
-        [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateAdoptionStatus(string id, [FromBody] UpdateStatusRequest request)
+        [HttpPut]
+        [Route("{id}/status")]
+        [ProducesResponseType(typeof(Adoption), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UpdateAdoptionStatus([FromRoute] string id, [FromBody] UpdateStatusRequest request)
         {
             try
             {
@@ -130,7 +150,6 @@ namespace Pet.API.Controllers
                     request.ReviewNotes
                 );
 
-                // If approved, update pet status to "Adopted"
                 if (request.Status == "Approved")
                 {
                     var pet = await _petRepository.GetByIdAsync(updatedAdoption.PetId);
@@ -140,7 +159,6 @@ namespace Pet.API.Controllers
                         await _petRepository.UpdateAsync(pet);
                     }
                 }
-                // If rejected, set pet back to "Available"
                 else if (request.Status == "Rejected")
                 {
                     var pet = await _petRepository.GetByIdAsync(updatedAdoption.PetId);
