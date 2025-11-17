@@ -19,9 +19,6 @@ builder.Services.AddScoped<IPetRepository, DynamoDBPetRepository>();
 builder.Services.AddScoped<IAdoptionRepository, DynamoDBAdoptionRepository>();
 builder.Services.AddScoped<IMedicalRecordRepository, DynamoDBMedicalRecordRepository>();
 
-// Register Data Seeding Service
-builder.Services.AddScoped<IDataSeedingService, DataSeedingService>();
-
 builder.Services.AddControllers();
 
 // Add Authorization Policies
@@ -58,23 +55,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Seed data on startup - this runs BEFORE app.Run() to ensure it completes
-var logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("=== Starting data seeding on application startup ===");
-
-using (var scope = app.Services.CreateScope())
-{
-    var seedingService = scope.ServiceProvider.GetRequiredService<IDataSeedingService>();
-    try
-    {
-        await seedingService.SeedDataAsync();
-        logger.LogInformation("=== Data seeding completed successfully ===");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "=== An error occurred while seeding the database ===");
-    }
-}
-
-logger.LogInformation("=== Application is ready to accept requests ===");
 app.Run();
