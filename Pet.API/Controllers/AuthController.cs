@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
-using BCrypt.Net;
 using Pet.API.Services.Interfaces;
+using Pet.API.Models.Enums;
 
 namespace Pet.API.Controllers
 {
@@ -34,6 +34,9 @@ namespace Pet.API.Controllers
                 if (existingUser != null)
                     return BadRequest(new { message = "Email already exists" });
 
+                // Validate and normalize role
+                var normalizedRole = RoleConstants.NormalizeRole(request.Role);
+                
                 // Generate new user
                 var userId = $"user-{Guid.NewGuid():N}";
                 var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
@@ -47,7 +50,7 @@ namespace Pet.API.Controllers
                     { "PasswordHash", new AttributeValue { S = passwordHash } },
                     { "FirstName", new AttributeValue { S = request.FirstName } },
                     { "LastName", new AttributeValue { S = request.LastName } },
-                    { "Role", new AttributeValue { S = request.Role ?? "Public" } },
+                    { "Role", new AttributeValue { S = normalizedRole } },
                     { "ApiKey", new AttributeValue { S = apiKey } },
                     { "CreatedDate", new AttributeValue { S = DateTime.UtcNow.ToString("o") } },
                     { "IsActive", new AttributeValue { BOOL = true } }
@@ -69,7 +72,7 @@ namespace Pet.API.Controllers
                     email = request.Email,
                     firstName = request.FirstName,
                     lastName = request.LastName,
-                    role = request.Role ?? "Public",
+                    role = normalizedRole,
                     apiKey,
                     message = "User registered successfully"
                 });
@@ -166,6 +169,9 @@ namespace Pet.API.Controllers
 
             var item = response.Items[0];
             
+            var roleString = item.GetValueOrDefault("Role")?.S;
+            var normalizedRole = RoleConstants.NormalizeRole(roleString);
+            
             return new SimpleUser
             {
                 UserId = item.GetValueOrDefault("UserId")?.S ?? "",
@@ -173,7 +179,7 @@ namespace Pet.API.Controllers
                 PasswordHash = item.GetValueOrDefault("PasswordHash")?.S ?? "",
                 FirstName = item.GetValueOrDefault("FirstName")?.S ?? "",
                 LastName = item.GetValueOrDefault("LastName")?.S ?? "",
-                Role = item.GetValueOrDefault("Role")?.S ?? "Public",
+                Role = normalizedRole,
                 ApiKey = item.GetValueOrDefault("ApiKey")?.S ?? "",
                 IsActive = item.GetValueOrDefault("IsActive")?.BOOL ?? true
             };
@@ -189,7 +195,7 @@ namespace Pet.API.Controllers
         public required string Password { get; set; }
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
-        public string? Role { get; set; } = "Public";
+        public string? Role { get; set; } = RoleConstants.DefaultRole;
     }
 
     public class SimpleLoginRequest
@@ -205,7 +211,7 @@ namespace Pet.API.Controllers
         public string PasswordHash { get; set; } = "";
         public string FirstName { get; set; } = "";
         public string LastName { get; set; } = "";
-        public string Role { get; set; } = "Public";
+        public string Role { get; set; } = RoleConstants.DefaultRole;
         public string ApiKey { get; set; } = "";
         public bool IsActive { get; set; } = true;
     }

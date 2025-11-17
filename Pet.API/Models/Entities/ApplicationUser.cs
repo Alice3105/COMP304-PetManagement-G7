@@ -1,3 +1,5 @@
+using Pet.API.Models.Enums;
+
 namespace Pet.API.Models.Entities
 {
     public class ApplicationUser
@@ -7,7 +9,7 @@ namespace Pet.API.Models.Entities
         public string PasswordHash { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
-        public string Role { get; set; } = "Public";
+        public string Role { get; set; } = RoleConstants.DefaultRole;
         public string ApiKey { get; set; } = string.Empty;
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedDate { get; set; }

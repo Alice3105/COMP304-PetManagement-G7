@@ -2,6 +2,7 @@ using Pet.API.Services;
 using Pet.API.Services.Interfaces;
 using Pet.API.Repositories;
 using Pet.API.Repositories.Interfaces;
+using Pet.API.Models.Enums;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,21 @@ builder.Services.AddScoped<IPetRepository, DynamoDBPetRepository>();
 builder.Services.AddScoped<IAdoptionRepository, DynamoDBAdoptionRepository>();
 
 builder.Services.AddControllers();
+
+// Add Authorization Policies
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => 
+        policy.RequireAssertion(context => 
+            context.User.IsInRole(RoleConstants.Admin)));
+    
+    options.AddPolicy("StaffOrAdmin", policy => 
+        policy.RequireAssertion(context => 
+            context.User.IsInRole(RoleConstants.Admin) || context.User.IsInRole(RoleConstants.Staff)));
+    
+    options.AddPolicy("Public", policy => 
+        policy.RequireAssertion(context => true));
+});
 
 // Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
