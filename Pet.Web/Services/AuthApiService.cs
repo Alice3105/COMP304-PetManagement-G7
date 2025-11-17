@@ -49,7 +49,8 @@ namespace Pet.Web.Services
                     };
                 }
 
-                _logger.LogWarning($"Registration failed: {response.StatusCode}");
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning($"Registration failed: {response.StatusCode} - {errorContent}");
                 return null;
             }
             catch (Exception ex)

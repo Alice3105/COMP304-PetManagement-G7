@@ -1,5 +1,5 @@
 using Amazon.DynamoDBv2.Model;
-using Pet.API.Models.Entities;
+using PetEntity = Pet.API.Models.Entities.Pet;
 using Pet.API.Repositories.Interfaces;
 using Pet.API.Services;
 using Pet.API.Services.Interfaces;
@@ -17,7 +17,7 @@ namespace Pet.API.Repositories
             _petsTableName = dynamoDBContext.PetsTableName;
         }
 
-        public async Task<Pet> CreateAsync(Pet pet)
+        public async Task<PetEntity> CreateAsync(PetEntity pet)
         {
             if (string.IsNullOrEmpty(pet.PetId))
             {
@@ -69,7 +69,7 @@ namespace Pet.API.Repositories
             return pet;
         }
 
-        public async Task<Pet?> GetByIdAsync(string petId)
+        public async Task<PetEntity?> GetByIdAsync(string petId)
         {
             var request = new GetItemRequest
             {
@@ -88,7 +88,7 @@ namespace Pet.API.Repositories
             return MapToPet(response.Item);
         }
 
-        public async Task<IEnumerable<Pet>> GetAllAsync()
+        public async Task<IEnumerable<PetEntity>> GetAllAsync()
         {
             var request = new ScanRequest
             {
@@ -97,7 +97,7 @@ namespace Pet.API.Repositories
 
             var response = await _dynamoDBContext.Client.ScanAsync(request);
 
-            var pets = new List<Pet>();
+            var pets = new List<PetEntity>();
             foreach (var item in response.Items)
             {
                 pets.Add(MapToPet(item));
@@ -106,7 +106,7 @@ namespace Pet.API.Repositories
             return pets;
         }
 
-        public async Task<Pet> UpdateAsync(Pet pet)
+        public async Task<PetEntity> UpdateAsync(PetEntity pet)
         {
             pet.UpdatedDate = DateTime.UtcNow;
 
@@ -167,9 +167,9 @@ namespace Pet.API.Repositories
             await _dynamoDBContext.Client.DeleteItemAsync(request);
         }
 
-        private Pet MapToPet(Dictionary<string, AttributeValue> item)
+        private PetEntity MapToPet(Dictionary<string, AttributeValue> item)
         {
-            var pet = new Pet
+            var pet = new PetEntity
             {
                 PetId = item.GetValueOrDefault("PetId")?.S ?? "",
                 Name = item.GetValueOrDefault("Name")?.S ?? "",
@@ -218,4 +218,3 @@ namespace Pet.API.Repositories
         }
     }
 }
-

@@ -1,14 +1,13 @@
-using Pet.API.Models.Entities;
+using PetEntity = Pet.API.Models.Entities.Pet;
 
 namespace Pet.API.Repositories.Interfaces
 {
     public interface IPetRepository
     {
-        Task<Pet> CreateAsync(Pet pet);
-        Task<Pet?> GetByIdAsync(string petId);
-        Task<IEnumerable<Pet>> GetAllAsync();
-        Task<Pet> UpdateAsync(Pet pet);
+        Task<PetEntity> CreateAsync(PetEntity pet);
+        Task<PetEntity?> GetByIdAsync(string petId);
+        Task<IEnumerable<PetEntity>> GetAllAsync();
+        Task<PetEntity> UpdateAsync(PetEntity pet);
         Task DeleteAsync(string petId);
     }
 }
-
