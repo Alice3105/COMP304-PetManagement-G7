@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Pet.API.Models.Entities;
+using Pet.API.Models.Enums;
 using Pet.API.Repositories.Interfaces;
 
 namespace Pet.API.Controllers
@@ -150,22 +151,47 @@ namespace Pet.API.Controllers
                     request.ReviewNotes
                 );
 
-                if (request.Status == "Approved")
+                // Update pet status based on adoption status
+                var pet = await _petRepository.GetByIdAsync(updatedAdoption.PetId);
+                if (pet != null)
                 {
-                    var pet = await _petRepository.GetByIdAsync(updatedAdoption.PetId);
-                    if (pet != null)
+                    switch (request.Status)
                     {
-                        pet.Status = "Adopted";
-                        await _petRepository.UpdateAsync(pet);
-                    }
-                }
-                else if (request.Status == "Rejected")
-                {
-                    var pet = await _petRepository.GetByIdAsync(updatedAdoption.PetId);
-                    if (pet != null && pet.Status == "Pending")
-                    {
-                        pet.Status = "Available";
-                        await _petRepository.UpdateAsync(pet);
+                        case "Approved":
+                            // When adoption is approved, pet becomes Adopted
+                            pet.Status = PetStatus.Adopted.ToStringValue();
+                            await _petRepository.UpdateAsync(pet);
+                            break;
+
+                        case "Pending":
+                            // When adoption is set to pending, check if there are other approved adoptions
+                            var allAdoptionsPending = await _adoptionRepository.GetByPetIdAsync(pet.PetId);
+                            var hasApprovedAdoptionPending = allAdoptionsPending.Any(a => a.AdoptionId != updatedAdoption.AdoptionId && a.Status == "Approved");
+                            
+                            // Only update to Pending if there's no other approved adoption
+                            if (!hasApprovedAdoptionPending)
+                            {
+                                pet.Status = PetStatus.Pending.ToStringValue();
+                                await _petRepository.UpdateAsync(pet);
+                            }
+                            break;
+
+                        case "Rejected":
+                            // When adoption is rejected, check if there are other pending or approved adoptions
+                            var allAdoptionsRejected = await _adoptionRepository.GetByPetIdAsync(pet.PetId);
+                            var hasApprovedAdoptionRejected = allAdoptionsRejected.Any(a => a.AdoptionId != updatedAdoption.AdoptionId && a.Status == "Approved");
+                            var hasPendingAdoptionRejected = allAdoptionsRejected.Any(a => a.AdoptionId != updatedAdoption.AdoptionId && a.Status == "Pending");
+                            
+                            var petStatusRejected = (hasApprovedAdoptionRejected, hasPendingAdoptionRejected) switch
+                            {
+                                (true, _) => PetStatus.Adopted,      // Another adoption is approved, keep pet as Adopted
+                                (false, true) => PetStatus.Pending,  // There are pending adoptions, set pet to Pending
+                                _ => PetStatus.Available              // No other adoptions, make pet Available
+                            };
+                            
+                            pet.Status = petStatusRejected.ToStringValue();
+                            await _petRepository.UpdateAsync(pet);
+                            break;
                     }
                 }
 
@@ -184,7 +210,7 @@ namespace Pet.API.Controllers
     // DTO for updating adoption status
     public class UpdateStatusRequest
     {
-        public string Status { get; set; } = string.Empty; // Approved, Rejected
+        public string Status { get; set; } = string.Empty; // Pending, Approved, Rejected
         public string ReviewedBy { get; set; } = string.Empty;
         public string? ReviewNotes { get; set; }
     }

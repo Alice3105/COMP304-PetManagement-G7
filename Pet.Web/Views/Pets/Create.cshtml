@@ -28,9 +28,9 @@
                                     <option value="">-- Select Species --</option>
                                     <option value="Dog">Dog</option>
                                     <option value="Cat">Cat</option>
-                                    <option value="Rabbit">Rabbit</option>
+                                    @* <option value="Rabbit">Rabbit</option>
                                     <option value="Bird">Bird</option>
-                                    <option value="Other">Other</option>
+                                    <option value="Other">Other</option> *@
                                 </select>
                                 <span asp-validation-for="Species" class="text-danger"></span>
                             </div>
@@ -124,6 +124,68 @@
                             </div>
                         </div>
 
+                        <!-- Medical Record Section -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-info text-white">
+                                <div class="form-check">
+                                    <input asp-for="CreateMedicalRecord" class="form-check-input" type="checkbox" id="createMedicalRecord" />
+                                    <label class="form-check-label text-white" for="createMedicalRecord">
+                                        <strong>Add Initial Medical Record (Optional)</strong>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="card-body" id="medicalRecordSection" style="display: none;">
+                                <div class="mb-3">
+                                    <label asp-for="MedicalRecordType" class="form-label">Record Type</label>
+                                    <select asp-for="MedicalRecordType" class="form-select">
+                                        <option value="">-- Select Type --</option>
+                                        <option value="General Checkup">General Checkup</option>
+                                        <option value="Vaccination">Vaccination</option>
+                                        <option value="Treatment">Treatment</option>
+                                        <option value="Follow-up">Follow-up</option>
+                                        <option value="Surgery">Surgery</option>
+                                    </select>
+                                    <span asp-validation-for="MedicalRecordType" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="MedicalRecordDate" class="form-label">Record Date</label>
+                                    <input asp-for="MedicalRecordDate" type="date" class="form-control" />
+                                    <span asp-validation-for="MedicalRecordDate" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="MedicalRecordDescription" class="form-label">Description</label>
+                                    <textarea asp-for="MedicalRecordDescription" class="form-control" rows="3" placeholder="Describe the medical record..."></textarea>
+                                    <span asp-validation-for="MedicalRecordDescription" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3" id="vaccineNameSection" style="display: none;">
+                                    <label asp-for="MedicalRecordVaccineName" class="form-label">Vaccine Name</label>
+                                    <input asp-for="MedicalRecordVaccineName" class="form-control" placeholder="e.g., DHPP, Rabies, etc." />
+                                    <span asp-validation-for="MedicalRecordVaccineName" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="MedicalRecordNextDueDate" class="form-label">Next Due Date (Optional)</label>
+                                    <input asp-for="MedicalRecordNextDueDate" type="date" class="form-control" />
+                                    <span asp-validation-for="MedicalRecordNextDueDate" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="MedicalRecordCost" class="form-label">Cost</label>
+                                    <input asp-for="MedicalRecordCost" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                                    <span asp-validation-for="MedicalRecordCost" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="MedicalRecordNotes" class="form-label">Notes (Optional)</label>
+                                    <textarea asp-for="MedicalRecordNotes" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
+                                    <span asp-validation-for="MedicalRecordNotes" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">Add Pet</button>
                             <a asp-action="Index" class="btn btn-secondary">Cancel</a>
@@ -137,4 +199,30 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const createMedicalRecordCheckbox = document.getElementById('createMedicalRecord');
+            const medicalRecordSection = document.getElementById('medicalRecordSection');
+            const recordTypeSelect = document.querySelector('select[name="MedicalRecordType"]');
+            const vaccineNameSection = document.getElementById('vaccineNameSection');
+
+            // Toggle medical record section visibility
+            createMedicalRecordCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    medicalRecordSection.style.display = 'block';
+                } else {
+                    medicalRecordSection.style.display = 'none';
+                }
+            });
+
+            // Show/hide vaccine name field based on record type
+            recordTypeSelect.addEventListener('change', function() {
+                if (this.value === 'Vaccination') {
+                    vaccineNameSection.style.display = 'block';
+                } else {
+                    vaccineNameSection.style.display = 'none';
+                }
+            });
+        });
+    </script>
 }

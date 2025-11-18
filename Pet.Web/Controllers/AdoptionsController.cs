@@ -213,5 +213,40 @@ namespace Pet.Web.Controllers
 
             return RedirectToAction(nameof(Details), new { id });
         }
+
+        // POST: /Adoptions/UpdateStatus/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStatus(string id, string status, string? reviewNotes = null)
+        {
+            var role = HttpContext.Session.GetString("Role");
+
+            if (role != "Staff" && role != "Admin")
+            {
+                TempData["Error"] = "Only staff members can update adoption status";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrEmpty(status) || (status != "Pending" && status != "Approved" && status != "Rejected"))
+            {
+                TempData["Error"] = "Invalid status. Status must be Pending, Approved, or Rejected";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var reviewedBy = HttpContext.Session.GetString("UserId") ?? HttpContext.Session.GetString("Email") ?? "Staff";
+
+            var success = await _adoptionApiService.UpdateAdoptionStatusAsync(id, status, reviewedBy, reviewNotes);
+
+            if (success)
+            {
+                TempData["Success"] = $"Adoption application status updated to {status} successfully!";
+            }
+            else
+            {
+                TempData["Error"] = "Failed to update adoption application status";
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
     }
 }

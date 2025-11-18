@@ -37,5 +37,15 @@ namespace Pet.Web.Models.ViewModels
         public bool GoodWithKids { get; set; }
         public bool GoodWithPets { get; set; }
         public IFormFile? Photo { get; set; }
+        
+        // Optional medical record fields
+        public bool CreateMedicalRecord { get; set; }
+        public string? MedicalRecordType { get; set; }
+        public DateTime? MedicalRecordDate { get; set; }
+        public string? MedicalRecordDescription { get; set; }
+        public string? MedicalRecordVaccineName { get; set; }
+        public DateTime? MedicalRecordNextDueDate { get; set; }
+        public decimal MedicalRecordCost { get; set; }
+        public string? MedicalRecordNotes { get; set; }
     }
 }

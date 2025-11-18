@@ -9,11 +9,13 @@ namespace Pet.Web.Controllers
     public class PetsController : Controller
     {
         private readonly IPetApiService _petApiService;
+        private readonly IMedicalRecordApiService _medicalRecordApiService;
         private readonly ILogger<PetsController> _logger;
 
-        public PetsController(IPetApiService petApiService, ILogger<PetsController> logger)
+        public PetsController(IPetApiService petApiService, IMedicalRecordApiService medicalRecordApiService, ILogger<PetsController> logger)
         {
             _petApiService = petApiService;
+            _medicalRecordApiService = medicalRecordApiService;
             _logger = logger;
         }
 
@@ -37,6 +39,10 @@ namespace Pet.Web.Controllers
                 TempData["Error"] = "Pet not found";
                 return RedirectToAction(nameof(Index));
             }
+
+            // Fetch medical records for this pet
+            var medicalRecords = await _medicalRecordApiService.GetMedicalRecordsByPetIdAsync(id);
+            ViewBag.MedicalRecords = medicalRecords;
 
             return View(pet);
         }
@@ -67,7 +73,43 @@ namespace Pet.Web.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = $"Pet '{createdPet.Name}' added successfully!";
+            if (model.CreateMedicalRecord && !string.IsNullOrWhiteSpace(model.MedicalRecordType))
+            {
+                var userId = HttpContext.Session.GetString("UserId");
+                var firstName = HttpContext.Session.GetString("FirstName") ?? "Staff";
+                var lastName = HttpContext.Session.GetString("LastName") ?? "Member";
+                var veterinarianName = $"Dr. {firstName} {lastName}";
+
+                var medicalRecord = new MedicalRecordViewModel
+                {
+                    PetId = createdPet.PetId,
+                    PetName = createdPet.Name,
+                    RecordType = model.MedicalRecordType,
+                    RecordDate = model.MedicalRecordDate ?? DateTime.UtcNow,
+                    VeterinarianId = userId ?? "",
+                    VeterinarianName = veterinarianName,
+                    Description = model.MedicalRecordDescription ?? "",
+                    VaccineName = model.MedicalRecordVaccineName ?? "",
+                    NextDueDate = model.MedicalRecordNextDueDate,
+                    Cost = model.MedicalRecordCost,
+                    Notes = model.MedicalRecordNotes ?? ""
+                };
+
+                var createdRecord = await _medicalRecordApiService.CreateMedicalRecordAsync(medicalRecord);
+                if (createdRecord != null)
+                {
+                    TempData["Success"] = $"Pet '{createdPet.Name}' and medical record added successfully!";
+                }
+                else
+                {
+                    TempData["Success"] = $"Pet '{createdPet.Name}' added successfully, but failed to create medical record.";
+                }
+            }
+            else
+            {
+                TempData["Success"] = $"Pet '{createdPet.Name}' added successfully!";
+            }
+
             return RedirectToAction(nameof(Details), new { id = createdPet.PetId });
         }
 
