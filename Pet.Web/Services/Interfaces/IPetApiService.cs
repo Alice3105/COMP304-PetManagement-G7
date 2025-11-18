@@ -1,6 +1,6 @@
 using Pet.Web.Models.ViewModels;
 
-namespace Pet.Web.Services
+namespace Pet.Web.Services.Interfaces
 {
     public interface IPetApiService
     {
@@ -11,3 +11,4 @@ namespace Pet.Web.Services
         Task<bool> DeletePetAsync(string petId);
     }
 }
+

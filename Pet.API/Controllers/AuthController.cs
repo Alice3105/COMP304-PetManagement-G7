@@ -25,6 +25,9 @@ namespace Pet.API.Controllers
 
         // POST: api/auth/register
         [HttpPost("register")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Register([FromBody] SimpleRegisterRequest request)
         {
             try
@@ -86,11 +89,13 @@ namespace Pet.API.Controllers
 
         // POST: api/auth/login
         [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Login([FromBody] SimpleLoginRequest request)
         {
             try
             {
-                // Find user by email
                 var user = await GetUserByEmail(request.Email);
                 
                 if (user == null)
@@ -99,14 +104,12 @@ namespace Pet.API.Controllers
                     return Unauthorized(new { message = "Invalid email or password" });
                 }
 
-                // Check if account is active
                 if (!user.IsActive)
                 {
                     _logger.LogWarning($"Login failed - account inactive: {request.Email}");
                     return Unauthorized(new { message = "Account is inactive" });
                 }
 
-                // Verify password
                 bool passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
                 
                 if (!passwordValid)
@@ -137,6 +140,7 @@ namespace Pet.API.Controllers
 
         // GET: api/auth/test
         [HttpGet("test")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult Test()
         {
             return Ok(new

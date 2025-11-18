@@ -1,4 +1,5 @@
 using Pet.Web.Models.ViewModels;
+using Pet.Web.Services.Interfaces;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -86,18 +87,18 @@ namespace Pet.Web.Services
                 AddAuthHeader();
 
                 using var formData = new MultipartFormDataContent();
-                formData.Add(new StringContent(model.Name), "Name");
-                formData.Add(new StringContent(model.Species), "Species");
-                formData.Add(new StringContent(model.Breed), "Breed");
-                formData.Add(new StringContent(model.Age.ToString()), "Age");
-                formData.Add(new StringContent(model.Gender), "Gender");
-                formData.Add(new StringContent(model.Size), "Size");
-                formData.Add(new StringContent(model.Color), "Color");
-                formData.Add(new StringContent(model.Description), "Description");
-                formData.Add(new StringContent(model.Vaccinated.ToString()), "Vaccinated");
-                formData.Add(new StringContent(model.Neutered.ToString()), "Neutered");
-                formData.Add(new StringContent(model.GoodWithKids.ToString()), "GoodWithKids");
-                formData.Add(new StringContent(model.GoodWithPets.ToString()), "GoodWithPets");
+                AddFormField(formData, "Name", model.Name);
+                AddFormField(formData, "Species", model.Species);
+                AddFormField(formData, "Breed", model.Breed);
+                AddFormField(formData, "Age", model.Age.ToString());
+                AddFormField(formData, "Gender", model.Gender);
+                AddFormField(formData, "Size", model.Size);
+                AddFormField(formData, "Color", model.Color);
+                AddFormField(formData, "Description", model.Description);
+                AddFormField(formData, "Vaccinated", model.Vaccinated.ToString());
+                AddFormField(formData, "Neutered", model.Neutered.ToString());
+                AddFormField(formData, "GoodWithKids", model.GoodWithKids.ToString());
+                AddFormField(formData, "GoodWithPets", model.GoodWithPets.ToString());
 
                 if (model.Photo != null)
                 {
@@ -158,6 +159,11 @@ namespace Pet.Web.Services
                 _logger.LogError(ex, $"Error deleting pet {petId} via API");
                 return false;
             }
+        }
+
+        private static void AddFormField(MultipartFormDataContent formData, string name, string value)
+        {
+            formData.Add(new StringContent(value), name);
         }
     }
 }
