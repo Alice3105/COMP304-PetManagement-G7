@@ -19,7 +19,7 @@ namespace Pet.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var allPets = await _petApiService.GetAllPetsAsync();
+            List<PetViewModel> allPets = await _petApiService.GetAllPetsAsync();
            
             return View(allPets);
         }

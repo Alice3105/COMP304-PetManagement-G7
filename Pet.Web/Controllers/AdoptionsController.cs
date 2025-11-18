@@ -23,8 +23,8 @@ namespace Pet.Web.Controllers
         // GET: /Adoptions
         public async Task<IActionResult> Index()
         {
-            var userId = HttpContext.Session.GetString("UserId");
-            var role = HttpContext.Session.GetString("Role");
+            string? userId = HttpContext.Session.GetString("UserId");
+            string? role = HttpContext.Session.GetString("Role");
 
             List<AdoptionViewModel> adoptions;
 
@@ -53,7 +53,7 @@ namespace Pet.Web.Controllers
             if (string.IsNullOrEmpty(id))
                 return NotFound();
 
-            var adoption = await _adoptionApiService.GetAdoptionByIdAsync(id);
+            AdoptionViewModel? adoption = await _adoptionApiService.GetAdoptionByIdAsync(id);
 
             if (adoption == null)
             {
@@ -61,8 +61,8 @@ namespace Pet.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var userId = HttpContext.Session.GetString("UserId");
-            var role = HttpContext.Session.GetString("Role");
+            string? userId = HttpContext.Session.GetString("UserId");
+            string? role = HttpContext.Session.GetString("Role");
 
             // Check authorization: owner or staff
             if (adoption.UserId != userId && role != "Staff" && role != "Admin")
@@ -77,7 +77,7 @@ namespace Pet.Web.Controllers
         // GET: /Adoptions/Create?petId=xxx
         public async Task<IActionResult> Create(string petId)
         {
-            var userId = HttpContext.Session.GetString("UserId");
+            string? userId = HttpContext.Session.GetString("UserId");
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -91,7 +91,7 @@ namespace Pet.Web.Controllers
                 return RedirectToAction("Index", "Pets");
             }
 
-            var pet = await _petApiService.GetPetByIdAsync(petId);
+            PetViewModel? pet = await _petApiService.GetPetByIdAsync(petId);
 
             if (pet == null)
             {
@@ -116,10 +116,10 @@ namespace Pet.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateAdoptionViewModel model)
         {
-            var userId = HttpContext.Session.GetString("UserId");
-            var email = HttpContext.Session.GetString("Email");
-            var firstName = HttpContext.Session.GetString("FirstName");
-            var lastName = HttpContext.Session.GetString("LastName");
+            string? userId = HttpContext.Session.GetString("UserId");
+            string? email = HttpContext.Session.GetString("Email");
+            string? firstName = HttpContext.Session.GetString("FirstName");
+            string? lastName = HttpContext.Session.GetString("LastName");
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -129,13 +129,13 @@ namespace Pet.Web.Controllers
 
             if (!ModelState.IsValid)
             {
-                var pet = await _petApiService.GetPetByIdAsync(model.PetId);
+                PetViewModel? pet = await _petApiService.GetPetByIdAsync(model.PetId);
                 ViewBag.PetName = pet?.Name ?? "Unknown";
                 ViewBag.PetId = model.PetId;
                 return View(model);
             }
 
-            var adoption = await _adoptionApiService.CreateAdoptionAsync(
+            AdoptionViewModel? adoption = await _adoptionApiService.CreateAdoptionAsync(
                 model,
                 userId,
                 email ?? "",
@@ -146,7 +146,7 @@ namespace Pet.Web.Controllers
             if (adoption == null)
             {
                 TempData["Error"] = "Failed to submit adoption application. Please try again.";
-                var pet = await _petApiService.GetPetByIdAsync(model.PetId);
+                PetViewModel? pet = await _petApiService.GetPetByIdAsync(model.PetId);
                 ViewBag.PetName = pet?.Name ?? "Unknown";
                 ViewBag.PetId = model.PetId;
                 return View(model);
@@ -161,7 +161,7 @@ namespace Pet.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Approve(string id, string reviewNotes)
         {
-            var role = HttpContext.Session.GetString("Role");
+            string? role = HttpContext.Session.GetString("Role");
 
             if (role != "Staff" && role != "Admin")
             {
@@ -169,9 +169,9 @@ namespace Pet.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var reviewedBy = HttpContext.Session.GetString("Email") ?? "Staff";
+            string reviewedBy = HttpContext.Session.GetString("Email") ?? "Staff";
 
-            var success = await _adoptionApiService.UpdateAdoptionStatusAsync(id, "Approved", reviewedBy, reviewNotes);
+            bool success = await _adoptionApiService.UpdateAdoptionStatusAsync(id, "Approved", reviewedBy, reviewNotes);
 
             if (success)
             {
@@ -190,7 +190,7 @@ namespace Pet.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reject(string id, string reviewNotes)
         {
-            var role = HttpContext.Session.GetString("Role");
+            string? role = HttpContext.Session.GetString("Role");
 
             if (role != "Staff" && role != "Admin")
             {
@@ -198,9 +198,9 @@ namespace Pet.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var reviewedBy = HttpContext.Session.GetString("Email") ?? "Staff";
+            string reviewedBy = HttpContext.Session.GetString("Email") ?? "Staff";
 
-            var success = await _adoptionApiService.UpdateAdoptionStatusAsync(id, "Rejected", reviewedBy, reviewNotes);
+            bool success = await _adoptionApiService.UpdateAdoptionStatusAsync(id, "Rejected", reviewedBy, reviewNotes);
 
             if (success)
             {
@@ -219,7 +219,7 @@ namespace Pet.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(string id, string status, string? reviewNotes = null)
         {
-            var role = HttpContext.Session.GetString("Role");
+            string? role = HttpContext.Session.GetString("Role");
 
             if (role != "Staff" && role != "Admin")
             {
@@ -233,9 +233,9 @@ namespace Pet.Web.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            var reviewedBy = HttpContext.Session.GetString("UserId") ?? HttpContext.Session.GetString("Email") ?? "Staff";
+            string reviewedBy = HttpContext.Session.GetString("UserId") ?? HttpContext.Session.GetString("Email") ?? "Staff";
 
-            var success = await _adoptionApiService.UpdateAdoptionStatusAsync(id, status, reviewedBy, reviewNotes);
+            bool success = await _adoptionApiService.UpdateAdoptionStatusAsync(id, status, reviewedBy, reviewNotes);
 
             if (success)
             {

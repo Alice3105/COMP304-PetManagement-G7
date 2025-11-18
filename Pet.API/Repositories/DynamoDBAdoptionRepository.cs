@@ -25,7 +25,7 @@ namespace Pet.API.Repositories
 
             adoption.ApplicationDate = DateTime.UtcNow;
 
-            var item = new Dictionary<string, AttributeValue>
+            Dictionary<string, AttributeValue> item = new Dictionary<string, AttributeValue>
             {
                 { "AdoptionId", new AttributeValue { S = adoption.AdoptionId } },
                 { "PetId", new AttributeValue { S = adoption.PetId } },
@@ -48,7 +48,7 @@ namespace Pet.API.Repositories
                 { "ApplicationDate", new AttributeValue { S = adoption.ApplicationDate.ToString("o") } }
             };
 
-            var request = new PutItemRequest
+            PutItemRequest request = new PutItemRequest
             {
                 TableName = _adoptionsTableName,
                 Item = item
@@ -61,7 +61,7 @@ namespace Pet.API.Repositories
 
         public async Task<Adoption?> GetByIdAsync(string adoptionId)
         {
-            var request = new GetItemRequest
+            GetItemRequest request = new GetItemRequest
             {
                 TableName = _adoptionsTableName,
                 Key = new Dictionary<string, AttributeValue>
@@ -70,7 +70,7 @@ namespace Pet.API.Repositories
                 }
             };
 
-            var response = await _dynamoDBContext.Client.GetItemAsync(request);
+            GetItemResponse response = await _dynamoDBContext.Client.GetItemAsync(request);
 
             if (response.Item == null || response.Item.Count == 0)
                 return null;
@@ -80,15 +80,15 @@ namespace Pet.API.Repositories
 
         public async Task<IEnumerable<Adoption>> GetAllAsync()
         {
-            var request = new ScanRequest
+            ScanRequest request = new ScanRequest
             {
                 TableName = _adoptionsTableName
             };
 
-            var response = await _dynamoDBContext.Client.ScanAsync(request);
+            ScanResponse response = await _dynamoDBContext.Client.ScanAsync(request);
 
-            var adoptions = new List<Adoption>();
-            foreach (var item in response.Items)
+            List<Adoption> adoptions = new List<Adoption>();
+            foreach (Dictionary<string, AttributeValue> item in response.Items)
             {
                 adoptions.Add(MapToAdoption(item));
             }
@@ -98,7 +98,7 @@ namespace Pet.API.Repositories
 
         public async Task<IEnumerable<Adoption>> GetByUserIdAsync(string userId)
         {
-            var request = new ScanRequest
+            ScanRequest request = new ScanRequest
             {
                 TableName = _adoptionsTableName,
                 FilterExpression = "UserId = :userId",
@@ -108,10 +108,10 @@ namespace Pet.API.Repositories
                 }
             };
 
-            var response = await _dynamoDBContext.Client.ScanAsync(request);
+            ScanResponse response = await _dynamoDBContext.Client.ScanAsync(request);
 
-            var adoptions = new List<Adoption>();
-            foreach (var item in response.Items)
+            List<Adoption> adoptions = new List<Adoption>();
+            foreach (Dictionary<string, AttributeValue> item in response.Items)
             {
                 adoptions.Add(MapToAdoption(item));
             }
@@ -121,7 +121,7 @@ namespace Pet.API.Repositories
 
         public async Task<IEnumerable<Adoption>> GetByPetIdAsync(string petId)
         {
-            var request = new ScanRequest
+            ScanRequest request = new ScanRequest
             {
                 TableName = _adoptionsTableName,
                 FilterExpression = "PetId = :petId",
@@ -131,10 +131,10 @@ namespace Pet.API.Repositories
                 }
             };
 
-            var response = await _dynamoDBContext.Client.ScanAsync(request);
+            ScanResponse response = await _dynamoDBContext.Client.ScanAsync(request);
 
-            var adoptions = new List<Adoption>();
-            foreach (var item in response.Items)
+            List<Adoption> adoptions = new List<Adoption>();
+            foreach (Dictionary<string, AttributeValue> item in response.Items)
             {
                 adoptions.Add(MapToAdoption(item));
             }
@@ -144,7 +144,7 @@ namespace Pet.API.Repositories
 
         public async Task<Adoption> UpdateStatusAsync(string adoptionId, string status, string reviewedBy, string? reviewNotes = null)
         {
-            var adoption = await GetByIdAsync(adoptionId);
+            Adoption? adoption = await GetByIdAsync(adoptionId);
             if (adoption == null)
                 throw new Exception("Adoption not found");
 
@@ -153,7 +153,7 @@ namespace Pet.API.Repositories
             adoption.ReviewedBy = reviewedBy;
             adoption.ReviewNotes = reviewNotes;
 
-            var item = new Dictionary<string, AttributeValue>
+            Dictionary<string, AttributeValue> item = new Dictionary<string, AttributeValue>
             {
                 { "AdoptionId", new AttributeValue { S = adoption.AdoptionId } },
                 { "PetId", new AttributeValue { S = adoption.PetId } },
@@ -183,7 +183,7 @@ namespace Pet.API.Repositories
                 item["ReviewNotes"] = new AttributeValue { S = adoption.ReviewNotes };
             }
 
-            var request = new PutItemRequest
+            PutItemRequest request = new PutItemRequest
             {
                 TableName = _adoptionsTableName,
                 Item = item
@@ -196,7 +196,7 @@ namespace Pet.API.Repositories
 
         private Adoption MapToAdoption(Dictionary<string, AttributeValue> item)
         {
-            var adoption = new Adoption
+            Adoption adoption = new Adoption
             {
                 AdoptionId = item.GetValueOrDefault("AdoptionId")?.S ?? "",
                 PetId = item.GetValueOrDefault("PetId")?.S ?? "",

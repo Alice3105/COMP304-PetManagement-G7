@@ -3,7 +3,7 @@ using Pet.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -30,7 +30,7 @@ builder.Services.AddSession(options =>
 builder.Services.AddHttpContextAccessor();
 
 // Configure HttpClient for Pet.API
-var apiBaseUrl = builder.Configuration["PetApiBaseUrl"] ?? "https://localhost:7148";
+string apiBaseUrl = builder.Configuration["PetApiBaseUrl"] ?? "https://localhost:7148";
 builder.Services.AddHttpClient<IAuthApiService, AuthApiService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -51,7 +51,7 @@ builder.Services.AddHttpClient<IMedicalRecordApiService, MedicalRecordApiService
     client.BaseAddress = new Uri(apiBaseUrl);
 });
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

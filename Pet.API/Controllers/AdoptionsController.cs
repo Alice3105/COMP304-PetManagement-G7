@@ -2,12 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using Pet.API.Models.Entities;
 using Pet.API.Models.Enums;
 using Pet.API.Repositories.Interfaces;
+using PetEntity = Pet.API.Models.Entities.Pet;
 
 namespace Pet.API.Controllers
 {
     [Route("api/adoptions")]
     [ApiController]
-    public class AdoptionsController : ControllerBase
+    public class AdoptionsController : BaseController
     {
         private readonly IAdoptionRepository _adoptionRepository;
         private readonly IPetRepository _petRepository;
@@ -27,18 +28,12 @@ namespace Pet.API.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<Adoption>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetAllAdoptions()
+        public async Task<ActionResult<IEnumerable<Adoption>>> GetAllAdoptions()
         {
-            try
-            {
-                var adoptions = await _adoptionRepository.GetAllAsync();
-                return Ok(adoptions);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching all adoptions");
-                return StatusCode(500, new { message = "Error fetching adoptions", error = ex.Message });
-            }
+            return await GetAllAsync(
+                _adoptionRepository.GetAllAsync,
+                "Adoptions",
+                _logger);
         }
 
         // GET: api/adoptions/{id}
@@ -47,22 +42,13 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(Adoption), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetAdoptionById([FromRoute] string id)
+        public async Task<ActionResult<Adoption>> GetAdoptionById([FromRoute] string id)
         {
-            try
-            {
-                var adoption = await _adoptionRepository.GetByIdAsync(id);
-
-                if (adoption == null)
-                    return NotFound(new { message = "Adoption not found" });
-
-                return Ok(adoption);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error fetching adoption {id}");
-                return StatusCode(500, new { message = "Error fetching adoption", error = ex.Message });
-            }
+            return await GetByIdAsync<Adoption>(
+                id,
+                _adoptionRepository.GetByIdAsync,
+                "Adoption",
+                _logger);
         }
 
         // GET: api/adoptions/user/{userId}
@@ -74,7 +60,7 @@ namespace Pet.API.Controllers
         {
             try
             {
-                var adoptions = await _adoptionRepository.GetByUserIdAsync(userId);
+                IEnumerable<Adoption> adoptions = await _adoptionRepository.GetByUserIdAsync(userId);
                 return Ok(adoptions);
             }
             catch (Exception ex)
@@ -93,7 +79,7 @@ namespace Pet.API.Controllers
         {
             try
             {
-                var adoptions = await _adoptionRepository.GetByPetIdAsync(petId);
+                IEnumerable<Adoption> adoptions = await _adoptionRepository.GetByPetIdAsync(petId);
                 return Ok(adoptions);
             }
             catch (Exception ex)
@@ -113,14 +99,14 @@ namespace Pet.API.Controllers
             try
             {
                 // Verify pet exists
-                var pet = await _petRepository.GetByIdAsync(adoption.PetId);
+                PetEntity? pet = await _petRepository.GetByIdAsync(adoption.PetId);
                 if (pet == null)
                 {
                     return BadRequest(new { message = "Pet not found" });
                 }
 
                 adoption.PetName = pet.Name;
-                var createdAdoption = await _adoptionRepository.CreateAsync(adoption);
+                Adoption createdAdoption = await _adoptionRepository.CreateAsync(adoption);
 
                 _logger.LogInformation($"Adoption application created: {createdAdoption.AdoptionId} for pet {pet.Name}");
 
@@ -144,7 +130,7 @@ namespace Pet.API.Controllers
         {
             try
             {
-                var updatedAdoption = await _adoptionRepository.UpdateStatusAsync(
+                Adoption updatedAdoption = await _adoptionRepository.UpdateStatusAsync(
                     id,
                     request.Status,
                     request.ReviewedBy,
@@ -152,23 +138,20 @@ namespace Pet.API.Controllers
                 );
 
                 // Update pet status based on adoption status
-                var pet = await _petRepository.GetByIdAsync(updatedAdoption.PetId);
+                PetEntity? pet = await _petRepository.GetByIdAsync(updatedAdoption.PetId);
                 if (pet != null)
                 {
                     switch (request.Status)
                     {
                         case "Approved":
-                            // When adoption is approved, pet becomes Adopted
                             pet.Status = PetStatus.Adopted.ToStringValue();
                             await _petRepository.UpdateAsync(pet);
                             break;
 
                         case "Pending":
-                            // When adoption is set to pending, check if there are other approved adoptions
-                            var allAdoptionsPending = await _adoptionRepository.GetByPetIdAsync(pet.PetId);
-                            var hasApprovedAdoptionPending = allAdoptionsPending.Any(a => a.AdoptionId != updatedAdoption.AdoptionId && a.Status == "Approved");
+                            IEnumerable<Adoption> allAdoptionsPending = await _adoptionRepository.GetByPetIdAsync(pet.PetId);
+                            bool hasApprovedAdoptionPending = allAdoptionsPending.Any(a => a.AdoptionId != updatedAdoption.AdoptionId && a.Status == "Approved");
                             
-                            // Only update to Pending if there's no other approved adoption
                             if (!hasApprovedAdoptionPending)
                             {
                                 pet.Status = PetStatus.Pending.ToStringValue();
@@ -177,12 +160,11 @@ namespace Pet.API.Controllers
                             break;
 
                         case "Rejected":
-                            // When adoption is rejected, check if there are other pending or approved adoptions
-                            var allAdoptionsRejected = await _adoptionRepository.GetByPetIdAsync(pet.PetId);
-                            var hasApprovedAdoptionRejected = allAdoptionsRejected.Any(a => a.AdoptionId != updatedAdoption.AdoptionId && a.Status == "Approved");
-                            var hasPendingAdoptionRejected = allAdoptionsRejected.Any(a => a.AdoptionId != updatedAdoption.AdoptionId && a.Status == "Pending");
+                            IEnumerable<Adoption> allAdoptionsRejected = await _adoptionRepository.GetByPetIdAsync(pet.PetId);
+                            bool hasApprovedAdoptionRejected = allAdoptionsRejected.Any(a => a.AdoptionId != updatedAdoption.AdoptionId && a.Status == "Approved");
+                            bool hasPendingAdoptionRejected = allAdoptionsRejected.Any(a => a.AdoptionId != updatedAdoption.AdoptionId && a.Status == "Pending");
                             
-                            var petStatusRejected = (hasApprovedAdoptionRejected, hasPendingAdoptionRejected) switch
+                            PetStatus petStatusRejected = (hasApprovedAdoptionRejected, hasPendingAdoptionRejected) switch
                             {
                                 (true, _) => PetStatus.Adopted,      // Another adoption is approved, keep pet as Adopted
                                 (false, true) => PetStatus.Pending,  // There are pending adoptions, set pet to Pending

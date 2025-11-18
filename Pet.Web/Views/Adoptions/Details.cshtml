@@ -148,23 +148,23 @@
                             <div class="mb-3">
                                 <label for="status" class="form-label">Status</label>
                                 <select name="status" id="status" class="form-select" required>
-                                    @if (Model.Status == "Pending")
+                                    @switch (Model.Status)
                                     {
-                                        <option value="Pending" selected>Pending</option>
-                                        <option value="Approved">Approved</option>
-                                        <option value="Rejected">Rejected</option>
-                                    }
-                                    else if (Model.Status == "Approved")
-                                    {
-                                        <option value="Pending">Pending</option>
-                                        <option value="Approved" selected>Approved</option>
-                                        <option value="Rejected">Rejected</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="Pending">Pending</option>
-                                        <option value="Approved">Approved</option>
-                                        <option value="Rejected" selected>Rejected</option>
+                                        case "Pending":
+                                            <option value="Pending" selected>Pending</option>
+                                            <option value="Approved">Approved</option>
+                                            <option value="Rejected">Rejected</option>
+                                            break;
+                                        case "Approved":
+                                            <option value="Pending">Pending</option>
+                                            <option value="Approved" selected>Approved</option>
+                                            <option value="Rejected">Rejected</option>
+                                            break;
+                                        default:
+                                            <option value="Pending">Pending</option>
+                                            <option value="Approved">Approved</option>
+                                            <option value="Rejected" selected>Rejected</option>
+                                            break;
                                     }
                                 </select>
                             </div>

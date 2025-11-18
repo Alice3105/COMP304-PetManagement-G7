@@ -6,13 +6,15 @@ namespace Pet.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class MedicalRecordsController : ControllerBase
+    public class MedicalRecordsController : BaseController
     {
         private readonly IMedicalRecordRepository _medicalRecordRepository;
+        private readonly ILogger<MedicalRecordsController> _logger;
 
-        public MedicalRecordsController(IMedicalRecordRepository medicalRecordRepository)
+        public MedicalRecordsController(IMedicalRecordRepository medicalRecordRepository, ILogger<MedicalRecordsController> logger)
         {
             _medicalRecordRepository = medicalRecordRepository;
+            _logger = logger;
         }
 
         // GET: api/medicalrecords/pet/{petId}
@@ -24,10 +26,18 @@ namespace Pet.API.Controllers
         public async Task<ActionResult<IEnumerable<MedicalRecord>>> GetByPetId(string petId)
         {
             if (string.IsNullOrWhiteSpace(petId))
-                return BadRequest("Pet id is required.");
+                return BadRequest(new { message = "Pet id is required." });
 
-            var records = await _medicalRecordRepository.GetByPetIdAsync(petId);
-            return Ok(records);
+            try
+            {
+                List<MedicalRecord> records = await _medicalRecordRepository.GetByPetIdAsync(petId);
+                return Ok(records);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error fetching medical records for pet {petId}");
+                return StatusCode(500, new { message = "Error fetching medical records", error = ex.Message });
+            }
         }
 
         // GET: api/medicalrecords/{id}
@@ -39,15 +49,11 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<MedicalRecord>> GetById(string id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-                return BadRequest("Record id is required.");
-
-            var record = await _medicalRecordRepository.GetByIdAsync(id);
-
-            if (record is null)
-                return NotFound();
-
-            return Ok(record);
+            return await GetByIdAsync(
+                id,
+                _medicalRecordRepository.GetByIdAsync,
+                "Medical Record",
+                _logger);
         }
 
         // GET: api/medicalrecords
@@ -57,8 +63,10 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<MedicalRecord>>> GetAll()
         {
-            var records = await _medicalRecordRepository.GetAllAsync();
-            return Ok(records);
+            return await GetAllAsync<MedicalRecord>(
+                async () => await _medicalRecordRepository.GetAllAsync(),
+                "Medical Record",
+                _logger);
         }
 
         // POST: api/medicalrecords
@@ -69,14 +77,14 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<MedicalRecord>> Create([FromBody] MedicalRecord record)
         {
-            if (string.IsNullOrWhiteSpace(record.PetId))
-                return BadRequest("Pet ID is required.");
-
-            if (string.IsNullOrWhiteSpace(record.RecordType))
-                return BadRequest("Record type is required.");
-
-            var createdRecord = await _medicalRecordRepository.CreateAsync(record);
-            return CreatedAtAction(nameof(GetById), new { id = createdRecord.RecordId }, createdRecord);
+            return await CreateAsync(
+                record,
+                _medicalRecordRepository.CreateAsync,
+                r => r.RecordId,
+                "Medical Record",
+                nameof(GetById),
+                _logger,
+                r => !string.IsNullOrWhiteSpace(r.PetId) && !string.IsNullOrWhiteSpace(r.RecordType));
         }
     }
 }

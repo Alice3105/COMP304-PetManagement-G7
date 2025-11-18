@@ -27,7 +27,7 @@ namespace Pet.API.Repositories
             pet.CreatedDate = DateTime.UtcNow;
             pet.UpdatedDate = null;
 
-            var item = new Dictionary<string, AttributeValue>
+            Dictionary<string, AttributeValue> item = new Dictionary<string, AttributeValue>
             {
                 { "PetId", new AttributeValue { S = pet.PetId } },
                 { "Name", new AttributeValue { S = pet.Name } },
@@ -50,15 +50,15 @@ namespace Pet.API.Repositories
             // Add PhotoUrls as a list
             if (pet.PhotoUrls != null && pet.PhotoUrls.Count > 0)
             {
-                var photoList = new List<AttributeValue>();
-                foreach (var url in pet.PhotoUrls)
+                List<AttributeValue> photoList = new List<AttributeValue>();
+                foreach (string url in pet.PhotoUrls)
                 {
                     photoList.Add(new AttributeValue { S = url });
                 }
                 item["PhotoUrls"] = new AttributeValue { L = photoList };
             }
 
-            var request = new PutItemRequest
+            PutItemRequest request = new PutItemRequest
             {
                 TableName = _petsTableName,
                 Item = item
@@ -71,7 +71,7 @@ namespace Pet.API.Repositories
 
         public async Task<PetEntity?> GetByIdAsync(string petId)
         {
-            var request = new GetItemRequest
+            GetItemRequest request = new GetItemRequest
             {
                 TableName = _petsTableName,
                 Key = new Dictionary<string, AttributeValue>
@@ -80,7 +80,7 @@ namespace Pet.API.Repositories
                 }
             };
 
-            var response = await _dynamoDBContext.Client.GetItemAsync(request);
+            GetItemResponse response = await _dynamoDBContext.Client.GetItemAsync(request);
 
             if (response.Item == null || response.Item.Count == 0)
                 return null;
@@ -90,15 +90,15 @@ namespace Pet.API.Repositories
 
         public async Task<IEnumerable<PetEntity>> GetAllAsync()
         {
-            var request = new ScanRequest
+            ScanRequest request = new ScanRequest
             {
                 TableName = _petsTableName
             };
 
-            var response = await _dynamoDBContext.Client.ScanAsync(request);
+            ScanResponse response = await _dynamoDBContext.Client.ScanAsync(request);
 
-            var pets = new List<PetEntity>();
-            foreach (var item in response.Items)
+            List<PetEntity> pets = new List<PetEntity>();
+            foreach (Dictionary<string, AttributeValue> item in response.Items)
             {
                 pets.Add(MapToPet(item));
             }
@@ -110,7 +110,7 @@ namespace Pet.API.Repositories
         {
             pet.UpdatedDate = DateTime.UtcNow;
 
-            var item = new Dictionary<string, AttributeValue>
+            Dictionary<string, AttributeValue> item = new Dictionary<string, AttributeValue>
             {
                 { "PetId", new AttributeValue { S = pet.PetId } },
                 { "Name", new AttributeValue { S = pet.Name } },
@@ -134,15 +134,15 @@ namespace Pet.API.Repositories
             // Add PhotoUrls as a list
             if (pet.PhotoUrls != null && pet.PhotoUrls.Count > 0)
             {
-                var photoList = new List<AttributeValue>();
-                foreach (var url in pet.PhotoUrls)
+                List<AttributeValue> photoList = new List<AttributeValue>();
+                foreach (string url in pet.PhotoUrls)
                 {
                     photoList.Add(new AttributeValue { S = url });
                 }
                 item["PhotoUrls"] = new AttributeValue { L = photoList };
             }
 
-            var request = new PutItemRequest
+            PutItemRequest request = new PutItemRequest
             {
                 TableName = _petsTableName,
                 Item = item
@@ -155,7 +155,7 @@ namespace Pet.API.Repositories
 
         public async Task DeleteAsync(string petId)
         {
-            var request = new DeleteItemRequest
+            DeleteItemRequest request = new DeleteItemRequest
             {
                 TableName = _petsTableName,
                 Key = new Dictionary<string, AttributeValue>
@@ -169,13 +169,13 @@ namespace Pet.API.Repositories
 
         private PetEntity MapToPet(Dictionary<string, AttributeValue> item)
         {
-            var pet = new PetEntity
+            PetEntity pet = new PetEntity
             {
                 PetId = item.GetValueOrDefault("PetId")?.S ?? "",
                 Name = item.GetValueOrDefault("Name")?.S ?? "",
                 Species = item.GetValueOrDefault("Species")?.S ?? "",
                 Breed = item.GetValueOrDefault("Breed")?.S ?? "",
-                Age = int.TryParse(item.GetValueOrDefault("Age")?.N, out var age) ? age : 0,
+                Age = int.TryParse(item.GetValueOrDefault("Age")?.N, out int age) ? age : 0,
                 Gender = item.GetValueOrDefault("Gender")?.S ?? "",
                 Size = item.GetValueOrDefault("Size")?.S ?? "",
                 Color = item.GetValueOrDefault("Color")?.S ?? "",

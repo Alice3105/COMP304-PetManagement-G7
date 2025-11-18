@@ -47,17 +47,17 @@
                                 <td>@adoption.UserFirstName @adoption.UserLastName</td>
                             }
                             <td>
-                                @if (adoption.Status == "Pending")
+                                @switch (adoption.Status)
                                 {
-                                    <span class="badge bg-warning">Pending</span>
-                                }
-                                else if (adoption.Status == "Approved")
-                                {
-                                    <span class="badge bg-success">Approved</span>
-                                }
-                                else if (adoption.Status == "Rejected")
-                                {
-                                    <span class="badge bg-danger">Rejected</span>
+                                    case "Pending":
+                                        <span class="badge bg-warning">Pending</span>
+                                        break;
+                                    case "Approved":
+                                        <span class="badge bg-success">Approved</span>
+                                        break;
+                                    case "Rejected":
+                                        <span class="badge bg-danger">Rejected</span>
+                                        break;
                                 }
                             </td>
                             <td>

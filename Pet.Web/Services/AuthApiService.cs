@@ -20,7 +20,7 @@ namespace Pet.Web.Services
         {
             try
             {
-                var requestData = new
+                object requestData = new
                 {
                     Email = model.Email,
                     Password = model.Password,
@@ -29,15 +29,15 @@ namespace Pet.Web.Services
                     Role = model.Role
                 };
 
-                var json = JsonSerializer.Serialize(requestData);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                string json = JsonSerializer.Serialize(requestData);
+                StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PostAsync("api/auth/register", content);
+                HttpResponseMessage response = await _httpClient.PostAsync("api/auth/register", content);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<JsonElement>(responseContent);
+                    string responseContent = await response.Content.ReadAsStringAsync();
+                    JsonElement result = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
                     return new UserSessionModel
                     {
@@ -50,7 +50,7 @@ namespace Pet.Web.Services
                     };
                 }
 
-                var errorContent = await response.Content.ReadAsStringAsync();
+                string errorContent = await response.Content.ReadAsStringAsync();
                 _logger.LogWarning($"Registration failed: {response.StatusCode} - {errorContent}");
                 return null;
             }
@@ -65,21 +65,21 @@ namespace Pet.Web.Services
         {
             try
             {
-                var requestData = new
+                object requestData = new
                 {
                     Email = model.Email,
                     Password = model.Password
                 };
 
-                var json = JsonSerializer.Serialize(requestData);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                string json = JsonSerializer.Serialize(requestData);
+                StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PostAsync("api/auth/login", content);
+                HttpResponseMessage response = await _httpClient.PostAsync("api/auth/login", content);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<JsonElement>(responseContent);
+                    string responseContent = await response.Content.ReadAsStringAsync();
+                    JsonElement result = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
                     return new UserSessionModel
                     {
