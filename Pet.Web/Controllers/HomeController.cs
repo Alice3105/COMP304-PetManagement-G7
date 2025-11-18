@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Pet.Web.Models;
 using Pet.Web.Models.ViewModels;
-using Pet.Web.Services;
+using Pet.Web.Services.Interfaces;
 using System.Diagnostics;
 
 namespace Pet.Web.Controllers

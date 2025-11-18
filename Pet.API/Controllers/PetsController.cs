@@ -18,6 +18,8 @@ namespace Pet.API.Controllers
         // GET: api/pets
         // Returns all pets
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<PetEntity>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<PetEntity>>> GetAll()
         {
             var pets = await _petRepository.GetAllAsync();
@@ -27,6 +29,10 @@ namespace Pet.API.Controllers
         // GET: api/pets/{id}
         // Returns a single pet by id
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(PetEntity), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetEntity>> GetById(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
@@ -43,6 +49,9 @@ namespace Pet.API.Controllers
         // POST: api/pets
         // Create a new pet
         [HttpPost]
+        [ProducesResponseType(typeof(PetEntity), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetEntity>> Create([FromBody] PetEntity pet)
         {
             if (pet == null)
@@ -63,6 +72,10 @@ namespace Pet.API.Controllers
         // PUT: api/pets/{id}
         // Update an existing pet
         [HttpPut("{id}")]
+        [ProducesResponseType(typeof(PetEntity), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetEntity>> Update(string id, [FromBody] PetEntity pet)
         {
             if (string.IsNullOrWhiteSpace(id))
@@ -85,6 +98,10 @@ namespace Pet.API.Controllers
         // DELETE: api/pets/{id}
         // Delete a pet
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(string id)
         {
             if (string.IsNullOrWhiteSpace(id))

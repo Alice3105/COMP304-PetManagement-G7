@@ -1,6 +1,6 @@
 using Pet.Web.Models.ViewModels;
 
-namespace Pet.Web.Services
+namespace Pet.Web.Services.Interfaces
 {
     public interface IAuthApiService
     {
@@ -8,3 +8,4 @@ namespace Pet.Web.Services
         Task<UserSessionModel?> LoginAsync(LoginViewModel model);
     }
 }
+
