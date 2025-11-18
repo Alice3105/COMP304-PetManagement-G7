@@ -5,21 +5,23 @@
 }
 
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-md-6">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
             @if (Model.PhotoUrls != null && Model.PhotoUrls.Any())
             {
-                <img src="@Model.PhotoUrls.First()" class="img-fluid rounded shadow" alt="@Model.Name" style="max-height: 500px; width: 100%; object-fit: cover;">
+                <img src="@Model.PhotoUrls.First()" class="img-fluid rounded shadow mb-4" alt="@Model.Name" style="max-height: 500px; width: 100%; object-fit: contain;">
             }
             else
             {
-                <div class="bg-secondary d-flex align-items-center justify-content-center rounded" style="height: 400px;">
+                <div class="bg-secondary d-flex align-items-center justify-content-center rounded mb-4" style="height: 400px;">
                     <span class="text-white h3">No Image Available</span>
                 </div>
             }
         </div>
+    </div>
 
-        <div class="col-md-6">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
             <h2>@Model.Name</h2>
             <span class="badge bg-@(Model.Status == "Available" ? "success" : "warning") mb-3">@Model.Status</span>
 
@@ -108,6 +110,84 @@
                 </div>
                 <div class="card-body">
                     <p>@Model.Description</p>
+                </div>
+            </div>
+
+            @{
+                var medicalRecords = ViewBag.MedicalRecords as List<Pet.Web.Models.ViewModels.MedicalRecordViewModel> ?? new List<Pet.Web.Models.ViewModels.MedicalRecordViewModel>();
+            }
+
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Medical Records</h5>
+                </div>
+                <div class="card-body">
+                    @if (medicalRecords.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Veterinarian</th>
+                                        <th>Description</th>
+                                        <th>Vaccine</th>
+                                        <th>Next Due</th>
+                                        <th>Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var record in medicalRecords)
+                                    {
+                                        <tr>
+                                            <td>@record.RecordDate.ToString("MMM dd, yyyy")</td>
+                                            <td>
+                                                <span class="badge bg-info">@record.RecordType</span>
+                                            </td>
+                                            <td>@record.VeterinarianName</td>
+                                            <td>@record.Description</td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(record.VaccineName))
+                                                {
+                                                    <span class="badge bg-primary">@record.VaccineName</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (record.NextDueDate.HasValue)
+                                                {
+                                                    <span class="@(record.NextDueDate.Value < DateTime.UtcNow ? "text-danger" : record.NextDueDate.Value < DateTime.UtcNow.AddDays(30) ? "text-warning" : "")">
+                                                        @record.NextDueDate.Value.ToString("MMM dd, yyyy")
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>$@record.Cost.ToString("F2")</td>
+                                        </tr>
+                                        @if (!string.IsNullOrEmpty(record.Notes))
+                                        {
+                                            <tr>
+                                                <td colspan="7" class="text-muted small">
+                                                    <strong>Notes:</strong> @record.Notes
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No medical records available for this pet.</p>
+                    }
                 </div>
             </div>
 

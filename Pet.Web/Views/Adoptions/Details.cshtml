@@ -135,33 +135,46 @@
             </div>
         </div>
 
-        @if (isStaff && Model.Status == "Pending")
+        @if (isStaff)
         {
             <div class="col-md-4">
                 <div class="card shadow sticky-top" style="top: 20px;">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">Review Application</h5>
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Update Application Status</h5>
                     </div>
                     <div class="card-body">
-                        <form asp-action="Approve" asp-route-id="@Model.AdoptionId" method="post" class="mb-3">
+                        <form asp-action="UpdateStatus" asp-route-id="@Model.AdoptionId" method="post">
                             @Html.AntiForgeryToken()
                             <div class="mb-3">
-                                <label for="approveNotes" class="form-label">Approval Notes (Optional)</label>
-                                <textarea name="reviewNotes" id="approveNotes" class="form-control" rows="3" placeholder="Any notes for the applicant..."></textarea>
+                                <label for="status" class="form-label">Status</label>
+                                <select name="status" id="status" class="form-select" required>
+                                    @if (Model.Status == "Pending")
+                                    {
+                                        <option value="Pending" selected>Pending</option>
+                                        <option value="Approved">Approved</option>
+                                        <option value="Rejected">Rejected</option>
+                                    }
+                                    else if (Model.Status == "Approved")
+                                    {
+                                        <option value="Pending">Pending</option>
+                                        <option value="Approved" selected>Approved</option>
+                                        <option value="Rejected">Rejected</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="Pending">Pending</option>
+                                        <option value="Approved">Approved</option>
+                                        <option value="Rejected" selected>Rejected</option>
+                                    }
+                                </select>
                             </div>
-                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('Are you sure you want to approve this application?');">
-                                Approve Application
-                            </button>
-                        </form>
-
-                        <form asp-action="Reject" asp-route-id="@Model.AdoptionId" method="post">
-                            @Html.AntiForgeryToken()
                             <div class="mb-3">
-                                <label for="rejectNotes" class="form-label">Rejection Reason</label>
-                                <textarea name="reviewNotes" id="rejectNotes" class="form-control" rows="3" placeholder="Reason for rejection..." required></textarea>
+                                <label for="reviewNotes" class="form-label">Review Notes</label>
+                                <textarea name="reviewNotes" id="reviewNotes" class="form-control" rows="4" placeholder="Enter any notes or comments...">@Model.ReviewNotes</textarea>
+                                <small class="form-text text-muted">Optional: Add notes about the status change</small>
                             </div>
-                            <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Are you sure you want to reject this application?');">
-                                Reject Application
+                            <button type="submit" class="btn btn-primary w-100" onclick="return confirm('Are you sure you want to update the application status?');">
+                                Update Status
                             </button>
                         </form>
                     </div>
