@@ -39,7 +39,7 @@ namespace Pet.Web.Controllers
                 return View(model);
             }
 
-            var userSession = await _authApiService.LoginAsync(model);
+            UserSessionModel? userSession = await _authApiService.LoginAsync(model);
 
             if (userSession == null)
             {
@@ -90,7 +90,7 @@ namespace Pet.Web.Controllers
                 return View(model);
             }
 
-            var userSession = await _authApiService.RegisterAsync(model);
+            UserSessionModel? userSession = await _authApiService.RegisterAsync(model);
 
             if (userSession == null)
             {
@@ -116,7 +116,7 @@ namespace Pet.Web.Controllers
         [HttpGet]
         public IActionResult Logout()
         {
-            var firstName = HttpContext.Session.GetString("FirstName");
+            string? firstName = HttpContext.Session.GetString("FirstName");
 
             HttpContext.Session.Clear();
 

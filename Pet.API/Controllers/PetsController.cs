@@ -6,13 +6,15 @@ namespace Pet.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class PetsController : ControllerBase
+    public class PetsController : BaseController
     {
         private readonly IPetRepository _petRepository;
+        private readonly ILogger<PetsController> _logger;
 
-        public PetsController(IPetRepository petRepository)
+        public PetsController(IPetRepository petRepository, ILogger<PetsController> logger)
         {
             _petRepository = petRepository;
+            _logger = logger;
         }
 
         // GET: api/pets
@@ -22,8 +24,10 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<PetEntity>>> GetAll()
         {
-            var pets = await _petRepository.GetAllAsync();
-            return Ok(pets);
+            return await GetAllAsync(
+                _petRepository.GetAllAsync,
+                "Pets",
+                _logger);
         }
 
         // GET: api/pets/{id}
@@ -35,15 +39,11 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetEntity>> GetById(string id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-                return BadRequest("Pet id is required.");
-
-            var pet = await _petRepository.GetByIdAsync(id);
-
-            if (pet is null)
-                return NotFound();
-
-            return Ok(pet);
+            return await GetByIdAsync(
+                id,
+                _petRepository.GetByIdAsync,
+                "Pet",
+                _logger);
         }
 
         // POST: api/pets
@@ -54,19 +54,19 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetEntity>> Create([FromBody] PetEntity pet)
         {
-            if (pet == null)
-                return BadRequest("Pet data is required.");
-
             // Ensure PetId exists (if DynamoDB key is PetId)
-            if (string.IsNullOrWhiteSpace(pet.PetId))
+            if (pet != null && string.IsNullOrWhiteSpace(pet.PetId))
             {
                 pet.PetId = Guid.NewGuid().ToString();
             }
 
-            var created = await _petRepository.CreateAsync(pet);
-
-            // Returns 201 with Location header: api/pets/{id}
-            return CreatedAtAction(nameof(GetById), new { id = created.PetId }, created);
+            return await CreateAsync(
+                pet,
+                _petRepository.CreateAsync,
+                p => p.PetId,
+                "Pet",
+                nameof(GetById),
+                _logger);
         }
 
         // PUT: api/pets/{id}
@@ -78,21 +78,14 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetEntity>> Update(string id, [FromBody] PetEntity pet)
         {
-            if (string.IsNullOrWhiteSpace(id))
-                return BadRequest("Pet id is required.");
-
-            if (pet == null)
-                return BadRequest("Pet data is required.");
-
-            var existing = await _petRepository.GetByIdAsync(id);
-            if (existing is null)
-                return NotFound();
-
-            // Make sure the ids line up
-            pet.PetId = id;
-
-            var updated = await _petRepository.UpdateAsync(pet);
-            return Ok(updated);
+            return await UpdateAsync(
+                id,
+                pet,
+                _petRepository.GetByIdAsync,
+                _petRepository.UpdateAsync,
+                (p, petId) => p.PetId = petId,
+                "Pet",
+                _logger);
         }
 
         // DELETE: api/pets/{id}
@@ -104,15 +97,12 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(string id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-                return BadRequest("Pet id is required.");
-
-            var existing = await _petRepository.GetByIdAsync(id);
-            if (existing is null)
-                return NotFound();
-
-            await _petRepository.DeleteAsync(id);
-            return NoContent();
+            return await DeleteAsync<PetEntity, string>(
+                id,
+                _petRepository.GetByIdAsync,
+                _petRepository.DeleteAsync,
+                "Pet",
+                _logger);
         }
     }
 }

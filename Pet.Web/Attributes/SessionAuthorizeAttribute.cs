@@ -14,8 +14,8 @@ namespace Pet.Web.Attributes
 
         public void OnAuthorization(AuthorizationFilterContext context)
         {
-            var httpContext = context.HttpContext;
-            var role = httpContext.Session.GetString("Role");
+            HttpContext httpContext = context.HttpContext;
+            string? role = httpContext.Session.GetString("Role");
 
             // No session means user is not logged in
             if (string.IsNullOrEmpty(role))

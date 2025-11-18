@@ -26,7 +26,7 @@ namespace Pet.API.Repositories
             record.CreatedDate = DateTime.UtcNow;
             record.UpdatedDate = null;
 
-            var item = new Dictionary<string, AttributeValue>
+            Dictionary<string, AttributeValue> item = new Dictionary<string, AttributeValue>
             {
                 { "RecordId", new AttributeValue { S = record.RecordId } },
                 { "PetId", new AttributeValue { S = record.PetId } },
@@ -47,7 +47,7 @@ namespace Pet.API.Repositories
                 item["NextDueDate"] = new AttributeValue { S = record.NextDueDate.Value.ToString("o") };
             }
 
-            var request = new PutItemRequest
+            PutItemRequest request = new PutItemRequest
             {
                 TableName = _medicalRecordsTableName,
                 Item = item
@@ -60,7 +60,7 @@ namespace Pet.API.Repositories
 
         public async Task<MedicalRecord?> GetByIdAsync(string recordId)
         {
-            var request = new GetItemRequest
+            GetItemRequest request = new GetItemRequest
             {
                 TableName = _medicalRecordsTableName,
                 Key = new Dictionary<string, AttributeValue>
@@ -69,7 +69,7 @@ namespace Pet.API.Repositories
                 }
             };
 
-            var response = await _dynamoDBContext.Client.GetItemAsync(request);
+            GetItemResponse response = await _dynamoDBContext.Client.GetItemAsync(request);
 
             if (response.Item == null || response.Item.Count == 0)
                 return null;
@@ -79,7 +79,7 @@ namespace Pet.API.Repositories
 
         public async Task<List<MedicalRecord>> GetByPetIdAsync(string petId)
         {
-            var request = new ScanRequest
+            ScanRequest request = new ScanRequest
             {
                 TableName = _medicalRecordsTableName,
                 FilterExpression = "PetId = :petId",
@@ -89,10 +89,10 @@ namespace Pet.API.Repositories
                 }
             };
 
-            var response = await _dynamoDBContext.Client.ScanAsync(request);
+            ScanResponse response = await _dynamoDBContext.Client.ScanAsync(request);
 
-            var records = new List<MedicalRecord>();
-            foreach (var item in response.Items)
+            List<MedicalRecord> records = new List<MedicalRecord>();
+            foreach (Dictionary<string, AttributeValue> item in response.Items)
             {
                 records.Add(MapToMedicalRecord(item));
             }
@@ -102,15 +102,15 @@ namespace Pet.API.Repositories
 
         public async Task<List<MedicalRecord>> GetAllAsync()
         {
-            var request = new ScanRequest
+            ScanRequest request = new ScanRequest
             {
                 TableName = _medicalRecordsTableName
             };
 
-            var response = await _dynamoDBContext.Client.ScanAsync(request);
+            ScanResponse response = await _dynamoDBContext.Client.ScanAsync(request);
 
-            var records = new List<MedicalRecord>();
-            foreach (var item in response.Items)
+            List<MedicalRecord> records = new List<MedicalRecord>();
+            foreach (Dictionary<string, AttributeValue> item in response.Items)
             {
                 records.Add(MapToMedicalRecord(item));
             }
@@ -122,7 +122,7 @@ namespace Pet.API.Repositories
         {
             record.UpdatedDate = DateTime.UtcNow;
 
-            var item = new Dictionary<string, AttributeValue>
+            Dictionary<string, AttributeValue> item = new Dictionary<string, AttributeValue>
             {
                 { "RecordId", new AttributeValue { S = record.RecordId } },
                 { "PetId", new AttributeValue { S = record.PetId } },
@@ -144,7 +144,7 @@ namespace Pet.API.Repositories
                 item["NextDueDate"] = new AttributeValue { S = record.NextDueDate.Value.ToString("o") };
             }
 
-            var request = new PutItemRequest
+            PutItemRequest request = new PutItemRequest
             {
                 TableName = _medicalRecordsTableName,
                 Item = item
@@ -157,7 +157,7 @@ namespace Pet.API.Repositories
 
         public async Task DeleteAsync(string recordId)
         {
-            var request = new DeleteItemRequest
+            DeleteItemRequest request = new DeleteItemRequest
             {
                 TableName = _medicalRecordsTableName,
                 Key = new Dictionary<string, AttributeValue>
@@ -171,7 +171,7 @@ namespace Pet.API.Repositories
 
         private MedicalRecord MapToMedicalRecord(Dictionary<string, AttributeValue> item)
         {
-            var record = new MedicalRecord
+            MedicalRecord record = new MedicalRecord
             {
                 RecordId = item.GetValueOrDefault("RecordId")?.S ?? "",
                 PetId = item.GetValueOrDefault("PetId")?.S ?? "",

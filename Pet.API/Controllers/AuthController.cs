@@ -33,20 +33,20 @@ namespace Pet.API.Controllers
             try
             {
                 // Check if user already exists
-                var existingUser = await GetUserByEmail(request.Email);
+                SimpleUser? existingUser = await GetUserByEmail(request.Email);
                 if (existingUser != null)
                     return BadRequest(new { message = "Email already exists" });
 
                 // Validate and normalize role
-                var normalizedRole = RoleConstants.NormalizeRole(request.Role);
+                string normalizedRole = RoleConstants.NormalizeRole(request.Role);
                 
                 // Generate new user
-                var userId = $"user-{Guid.NewGuid():N}";
-                var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-                var apiKey = $"sk_live_{Guid.NewGuid():N}";
+                string userId = $"user-{Guid.NewGuid():N}";
+                string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                string apiKey = $"sk_live_{Guid.NewGuid():N}";
 
                 // Create user in DynamoDB
-                var item = new Dictionary<string, AttributeValue>
+                Dictionary<string, AttributeValue> item = new Dictionary<string, AttributeValue>
                 {
                     { "UserId", new AttributeValue { S = userId } },
                     { "Email", new AttributeValue { S = request.Email } },
@@ -59,7 +59,7 @@ namespace Pet.API.Controllers
                     { "IsActive", new AttributeValue { BOOL = true } }
                 };
 
-                var putRequest = new PutItemRequest
+                PutItemRequest putRequest = new PutItemRequest
                 {
                     TableName = _usersTable,
                     Item = item
@@ -96,7 +96,7 @@ namespace Pet.API.Controllers
         {
             try
             {
-                var user = await GetUserByEmail(request.Email);
+                SimpleUser? user = await GetUserByEmail(request.Email);
                 
                 if (user == null)
                 {
@@ -156,7 +156,7 @@ namespace Pet.API.Controllers
 
         private async Task<SimpleUser?> GetUserByEmail(string email)
         {
-            var scanRequest = new ScanRequest
+            ScanRequest scanRequest = new ScanRequest
             {
                 TableName = _usersTable,
                 FilterExpression = "Email = :email",
@@ -166,15 +166,15 @@ namespace Pet.API.Controllers
                 }
             };
 
-            var response = await _client.ScanAsync(scanRequest);
+            ScanResponse response = await _client.ScanAsync(scanRequest);
             
             if (response.Items.Count == 0)
                 return null;
 
-            var item = response.Items[0];
+            Dictionary<string, AttributeValue> item = response.Items[0];
             
-            var roleString = item.GetValueOrDefault("Role")?.S;
-            var normalizedRole = RoleConstants.NormalizeRole(roleString);
+            string? roleString = item.GetValueOrDefault("Role")?.S;
+            string normalizedRole = RoleConstants.NormalizeRole(roleString);
             
             return new SimpleUser
             {

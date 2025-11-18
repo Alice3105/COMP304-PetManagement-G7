@@ -22,7 +22,7 @@ namespace Pet.Web.Controllers
         // GET: /Pets
         public async Task<IActionResult> Index()
         {
-            var pets = await _petApiService.GetAllPetsAsync();
+            List<PetViewModel> pets = await _petApiService.GetAllPetsAsync();
             return View(pets);
         }
 
@@ -32,7 +32,7 @@ namespace Pet.Web.Controllers
             if (string.IsNullOrEmpty(id))
                 return NotFound();
 
-            var pet = await _petApiService.GetPetByIdAsync(id);
+            PetViewModel? pet = await _petApiService.GetPetByIdAsync(id);
 
             if (pet == null)
             {
@@ -41,7 +41,7 @@ namespace Pet.Web.Controllers
             }
 
             // Fetch medical records for this pet
-            var medicalRecords = await _medicalRecordApiService.GetMedicalRecordsByPetIdAsync(id);
+            List<MedicalRecordViewModel> medicalRecords = await _medicalRecordApiService.GetMedicalRecordsByPetIdAsync(id);
             ViewBag.MedicalRecords = medicalRecords;
 
             return View(pet);
@@ -65,7 +65,7 @@ namespace Pet.Web.Controllers
                 return View(model);
             }
 
-            var createdPet = await _petApiService.CreatePetAsync(model);
+            PetViewModel? createdPet = await _petApiService.CreatePetAsync(model);
 
             if (createdPet == null)
             {
@@ -75,12 +75,12 @@ namespace Pet.Web.Controllers
 
             if (model.CreateMedicalRecord && !string.IsNullOrWhiteSpace(model.MedicalRecordType))
             {
-                var userId = HttpContext.Session.GetString("UserId");
-                var firstName = HttpContext.Session.GetString("FirstName") ?? "Staff";
-                var lastName = HttpContext.Session.GetString("LastName") ?? "Member";
-                var veterinarianName = $"Dr. {firstName} {lastName}";
+                string? userId = HttpContext.Session.GetString("UserId");
+                string firstName = HttpContext.Session.GetString("FirstName") ?? "Staff";
+                string lastName = HttpContext.Session.GetString("LastName") ?? "Member";
+                string veterinarianName = $"Dr. {firstName} {lastName}";
 
-                var medicalRecord = new MedicalRecordViewModel
+                MedicalRecordViewModel medicalRecord = new MedicalRecordViewModel
                 {
                     PetId = createdPet.PetId,
                     PetName = createdPet.Name,
@@ -95,7 +95,7 @@ namespace Pet.Web.Controllers
                     Notes = model.MedicalRecordNotes ?? ""
                 };
 
-                var createdRecord = await _medicalRecordApiService.CreateMedicalRecordAsync(medicalRecord);
+                MedicalRecordViewModel? createdRecord = await _medicalRecordApiService.CreateMedicalRecordAsync(medicalRecord);
                 if (createdRecord != null)
                 {
                     TempData["Success"] = $"Pet '{createdPet.Name}' and medical record added successfully!";
@@ -120,7 +120,7 @@ namespace Pet.Web.Controllers
             if (string.IsNullOrEmpty(id))
                 return NotFound();
 
-            var pet = await _petApiService.GetPetByIdAsync(id);
+            PetViewModel? pet = await _petApiService.GetPetByIdAsync(id);
 
             if (pet == null)
             {
@@ -148,7 +148,7 @@ namespace Pet.Web.Controllers
                 return View(model);
             }
 
-            var success = await _petApiService.UpdatePetAsync(id, model);
+            bool success = await _petApiService.UpdatePetAsync(id, model);
 
             if (!success)
             {
@@ -172,7 +172,7 @@ namespace Pet.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var success = await _petApiService.DeletePetAsync(id);
+            bool success = await _petApiService.DeletePetAsync(id);
 
             if (!success)
             {
