@@ -11,7 +11,7 @@ namespace Pet.API.Controllers
         private readonly IMedicalRecordRepository _medicalRecordRepository;
         private readonly ILogger<MedicalRecordsController> _logger;
 
-        public MedicalRecordsController(IMedicalRecordRepository medicalRecordRepository, ILogger<MedicalRecordsController> logger)
+        public MedicalRecordsController(IMedicalRecordRepository medicalRecordRepository, ILogger<MedicalRecordsController> logger) : base(logger)
         {
             _medicalRecordRepository = medicalRecordRepository;
             _logger = logger;
@@ -52,8 +52,7 @@ namespace Pet.API.Controllers
             return await GetByIdAsync(
                 id,
                 _medicalRecordRepository.GetByIdAsync,
-                "Medical Record",
-                _logger);
+                "Medical Record");
         }
 
         // GET: api/medicalrecords
@@ -65,8 +64,7 @@ namespace Pet.API.Controllers
         {
             return await GetAllAsync<MedicalRecord>(
                 async () => await _medicalRecordRepository.GetAllAsync(),
-                "Medical Record",
-                _logger);
+                "Medical Record");
         }
 
         // POST: api/medicalrecords
@@ -83,7 +81,6 @@ namespace Pet.API.Controllers
                 r => r.RecordId,
                 "Medical Record",
                 nameof(GetById),
-                _logger,
                 r => !string.IsNullOrWhiteSpace(r.PetId) && !string.IsNullOrWhiteSpace(r.RecordType));
         }
     }
