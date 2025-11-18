@@ -11,7 +11,7 @@ namespace Pet.API.Controllers
         private readonly IPetRepository _petRepository;
         private readonly ILogger<PetsController> _logger;
 
-        public PetsController(IPetRepository petRepository, ILogger<PetsController> logger)
+        public PetsController(IPetRepository petRepository, ILogger<PetsController> logger) : base(logger)
         {
             _petRepository = petRepository;
             _logger = logger;
@@ -26,8 +26,7 @@ namespace Pet.API.Controllers
         {
             return await GetAllAsync(
                 _petRepository.GetAllAsync,
-                "Pets",
-                _logger);
+                "Pets");
         }
 
         // GET: api/pets/{id}
@@ -42,8 +41,7 @@ namespace Pet.API.Controllers
             return await GetByIdAsync(
                 id,
                 _petRepository.GetByIdAsync,
-                "Pet",
-                _logger);
+                "Pet");
         }
 
         // POST: api/pets
@@ -54,8 +52,11 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetEntity>> Create([FromBody] PetEntity pet)
         {
+            if (pet == null)
+                return BadRequest(new { message = "Pet data is required." });
+
             // Ensure PetId exists (if DynamoDB key is PetId)
-            if (pet != null && string.IsNullOrWhiteSpace(pet.PetId))
+            if (string.IsNullOrWhiteSpace(pet.PetId))
             {
                 pet.PetId = Guid.NewGuid().ToString();
             }
@@ -65,8 +66,7 @@ namespace Pet.API.Controllers
                 _petRepository.CreateAsync,
                 p => p.PetId,
                 "Pet",
-                nameof(GetById),
-                _logger);
+                nameof(GetById));
         }
 
         // PUT: api/pets/{id}
@@ -84,8 +84,7 @@ namespace Pet.API.Controllers
                 _petRepository.GetByIdAsync,
                 _petRepository.UpdateAsync,
                 (p, petId) => p.PetId = petId,
-                "Pet",
-                _logger);
+                "Pet");
         }
 
         // DELETE: api/pets/{id}
@@ -101,8 +100,7 @@ namespace Pet.API.Controllers
                 id,
                 _petRepository.GetByIdAsync,
                 _petRepository.DeleteAsync,
-                "Pet",
-                _logger);
+                "Pet");
         }
     }
 }

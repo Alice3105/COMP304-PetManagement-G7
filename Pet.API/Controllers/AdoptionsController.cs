@@ -17,7 +17,7 @@ namespace Pet.API.Controllers
         public AdoptionsController(
             IAdoptionRepository adoptionRepository,
             IPetRepository petRepository,
-            ILogger<AdoptionsController> logger)
+            ILogger<AdoptionsController> logger) : base(logger)
         {
             _adoptionRepository = adoptionRepository;
             _petRepository = petRepository;
@@ -32,8 +32,7 @@ namespace Pet.API.Controllers
         {
             return await GetAllAsync(
                 _adoptionRepository.GetAllAsync,
-                "Adoptions",
-                _logger);
+                "Adoptions");
         }
 
         // GET: api/adoptions/{id}
@@ -47,8 +46,7 @@ namespace Pet.API.Controllers
             return await GetByIdAsync<Adoption>(
                 id,
                 _adoptionRepository.GetByIdAsync,
-                "Adoption",
-                _logger);
+                "Adoption");
         }
 
         // GET: api/adoptions/user/{userId}
