@@ -32,7 +32,7 @@ namespace Pet.API.Controllers
                 if (entity == null)
                     return NotFound(new { message = $"{entityName} not found" });
 
-                return Ok(entity);
+                return Ok(entity!);
             }
             catch (Exception ex)
             {

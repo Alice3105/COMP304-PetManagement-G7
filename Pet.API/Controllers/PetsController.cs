@@ -52,8 +52,11 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetEntity>> Create([FromBody] PetEntity pet)
         {
+            if (pet == null)
+                return BadRequest(new { message = "Pet data is required." });
+
             // Ensure PetId exists (if DynamoDB key is PetId)
-            if (pet != null && string.IsNullOrWhiteSpace(pet.PetId))
+            if (string.IsNullOrWhiteSpace(pet.PetId))
             {
                 pet.PetId = Guid.NewGuid().ToString();
             }
