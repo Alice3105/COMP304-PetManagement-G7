@@ -48,20 +48,78 @@ namespace Pet.API.Controllers
         }
 
         // POST: api/pets
-        // Create a new pet with file upload (multipart form data only)
+        // Create a new pet - handles both JSON and multipart form data (with file upload)
         [HttpPost]
         [ProducesResponseType(typeof(PetEntity), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetEntity>> Create()
         {
+            // Check if request is multipart form data (file upload)
+            if (Request.HasFormContentType)
+            {
+                return await CreateFromFormData();
+            }
+
+            // Handle JSON request
             try
             {
-                if (!Request.HasFormContentType)
+                PetEntity? pet = null;
+                
+                // Try to read JSON from body
+                Request.EnableBuffering();
+                Request.Body.Position = 0;
+
+                using var reader = new StreamReader(Request.Body, leaveOpen: true);
+                string jsonBody = await reader.ReadToEndAsync();
+                Request.Body.Position = 0;
+
+                if (!string.IsNullOrWhiteSpace(jsonBody))
                 {
-                    return BadRequest(new { message = "Request must be multipart/form-data." });
+                    pet = System.Text.Json.JsonSerializer.Deserialize<PetEntity>(
+                        jsonBody,
+                        new System.Text.Json.JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
                 }
 
+                if (pet == null)
+                {
+                    return BadRequest(new { message = "Pet data is required." });
+                }
+
+                // Ensure PetId exists
+                if (string.IsNullOrWhiteSpace(pet.PetId))
+                {
+                    pet.PetId = Guid.NewGuid().ToString();
+                }
+
+                // Use BaseController helper for JSON requests
+                return await CreateAsync(
+                    pet,
+                    _petRepository.CreateAsync,
+                    p => p.PetId,
+                    "Pet",
+                    nameof(GetById));
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                _logger.LogError(ex, "Error deserializing JSON pet data");
+                return BadRequest(new { message = "Invalid JSON format.", error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing JSON request");
+                return StatusCode(500, new { message = "Error processing request", error = ex.Message });
+            }
+        }
+
+        // Helper method to create pet from multipart form data
+        private async Task<ActionResult<PetEntity>> CreateFromFormData()
+        {
+            try
+            {
                 var form = await Request.ReadFormAsync();
                 
                 string name = form["Name"].ToString();
