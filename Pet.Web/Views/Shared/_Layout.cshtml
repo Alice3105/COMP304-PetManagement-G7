@@ -25,6 +25,12 @@
                         @if (Context.Session.GetString("UserId") != null)
                         {
                             var role = Context.Session.GetString("Role");
+                            @if (role == "Public")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Adoptions" asp-action="Index">My Adoption Application</a>
+                                </li>
+                            }
                             @if (role == "Staff" || role == "Admin")
                             {
                                 <li class="nav-item">

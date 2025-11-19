@@ -50,6 +50,25 @@ namespace Pet.Web.Services
             return await PostAsync<AdoptionViewModel>("api/adoptions", requestData);
         }
 
+        public async Task<bool> UpdateAdoptionAsync(string adoptionId, CreateAdoptionViewModel model)
+        {
+            object requestData = new
+            {
+                model.PhoneNumber,
+                model.Address,
+                model.HousingType,
+                model.HasYard,
+                model.HasOtherPets,
+                OtherPetsDescription = model.OtherPetsDescription ?? "",
+                model.HasChildren,
+                ChildrenAges = model.ChildrenAges ?? "",
+                model.EmploymentStatus,
+                model.Reason
+            };
+
+            return await PutAsync($"api/adoptions/{adoptionId}", requestData, requireAuth: true);
+        }
+
         public async Task<bool> UpdateAdoptionStatusAsync(string adoptionId, string status, string reviewedBy, string? reviewNotes = null)
         {
             object requestData = new
@@ -59,7 +78,12 @@ namespace Pet.Web.Services
                 reviewNotes
             };
 
-            return await PutAsync($"api/adoptions/{adoptionId}/status", requestData);
+            return await PatchAsync($"api/adoptions/{adoptionId}/status", requestData, requireAuth: true);
+        }
+
+        public async Task<bool> DeleteAdoptionAsync(string adoptionId)
+        {
+            return await DeleteAsync($"api/adoptions/{adoptionId}", requireAuth: true);
         }
     }
 }

@@ -147,10 +147,19 @@
                     </form>
                 </div>
             </div>
+
+            @{
+                var medicalRecords = ViewBag.MedicalRecords as List<Pet.Web.Models.ViewModels.MedicalRecordViewModel> ?? new List<Pet.Web.Models.ViewModels.MedicalRecordViewModel>();
+            }
+
+            @await Html.PartialAsync("_MedicalRecordsTable", medicalRecords)
         </div>
     </div>
 </div>
 
+@await Html.PartialAsync("_MedicalRecordModals", medicalRecords)
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @await Html.PartialAsync("_MedicalRecordsScripts")
 }

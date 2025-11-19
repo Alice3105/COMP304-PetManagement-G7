@@ -130,6 +130,32 @@ namespace Pet.Web.Services
         }
 
         /// <summary>
+        /// Generic PATCH request handler
+        /// </summary>
+        protected async Task<bool> PatchAsync(string endpoint, object data, bool requireAuth = false)
+        {
+            try
+            {
+                if (requireAuth)
+                    AddAuthHeader();
+
+                string json = JsonSerializer.Serialize(data);
+                StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Patch, endpoint)
+                {
+                    Content = content
+                };
+                HttpResponseMessage response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error PATCHing to {endpoint}");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Generic DELETE request handler
         /// </summary>
         protected async Task<bool> DeleteAsync(string endpoint, bool requireAuth = false)

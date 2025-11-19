@@ -6,6 +6,9 @@ namespace Pet.Web.Services.Interfaces
     {
         Task<List<MedicalRecordViewModel>> GetMedicalRecordsByPetIdAsync(string petId);
         Task<MedicalRecordViewModel?> CreateMedicalRecordAsync(MedicalRecordViewModel record);
+        Task<bool> UpdateMedicalRecordAsync(string recordId, MedicalRecordViewModel record);
+        Task<bool> PatchMedicalRecordAsync(string recordId, MedicalRecordViewModel record);
+        Task<bool> DeleteMedicalRecordAsync(string recordId);
     }
 }
 

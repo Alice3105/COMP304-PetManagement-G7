@@ -3,10 +3,14 @@ using Pet.API.Services.Interfaces;
 using Pet.API.Repositories;
 using Pet.API.Repositories.Interfaces;
 using Pet.API.Models.Enums;
+using Pet.API.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Register DynamoDB Context
 builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();

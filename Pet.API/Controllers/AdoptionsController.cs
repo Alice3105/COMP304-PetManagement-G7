@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using AutoMapper;
 using Pet.API.Models.Entities;
+using Pet.API.Models.DTOs;
 using Pet.API.Models.Enums;
 using Pet.API.Repositories.Interfaces;
 using PetEntity = Pet.API.Models.Entities.Pet;
@@ -12,54 +14,79 @@ namespace Pet.API.Controllers
     {
         private readonly IAdoptionRepository _adoptionRepository;
         private readonly IPetRepository _petRepository;
+        private readonly IMapper _mapper;
         private readonly ILogger<AdoptionsController> _logger;
 
         public AdoptionsController(
             IAdoptionRepository adoptionRepository,
             IPetRepository petRepository,
+            IMapper mapper,
             ILogger<AdoptionsController> logger) : base(logger)
         {
             _adoptionRepository = adoptionRepository;
             _petRepository = petRepository;
+            _mapper = mapper;
             _logger = logger;
         }
 
         // GET: api/adoptions
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<Adoption>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<AdoptionResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<Adoption>>> GetAllAdoptions()
+        public async Task<ActionResult<IEnumerable<AdoptionResponse>>> GetAllAdoptions()
         {
-            return await GetAllAsync(
-                _adoptionRepository.GetAllAsync,
-                "Adoptions");
+            try
+            {
+                var adoptions = await _adoptionRepository.GetAllAsync();
+                var adoptionResponses = _mapper.Map<IEnumerable<AdoptionResponse>>(adoptions);
+                return Ok(adoptionResponses);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error fetching all Adoptions");
+                return StatusCode(500, new { message = "Error fetching Adoptions", error = ex.Message });
+            }
         }
 
         // GET: api/adoptions/{id}
         [HttpGet]
         [Route("{id}")]
-        [ProducesResponseType(typeof(Adoption), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AdoptionResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<Adoption>> GetAdoptionById([FromRoute] string id)
+        public async Task<ActionResult<AdoptionResponse>> GetAdoptionById([FromRoute] string id)
         {
-            return await GetByIdAsync<Adoption>(
-                id,
-                _adoptionRepository.GetByIdAsync,
-                "Adoption");
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { message = "Adoption id is required." });
+
+            try
+            {
+                var adoption = await _adoptionRepository.GetByIdAsync(id);
+                if (adoption == null)
+                    return NotFound(new { message = "Adoption not found" });
+
+                var adoptionResponse = _mapper.Map<AdoptionResponse>(adoption);
+                return Ok(adoptionResponse);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"Error fetching Adoption {id}");
+                return StatusCode(500, new { message = "Error fetching Adoption", error = ex.Message });
+            }
         }
 
         // GET: api/adoptions/user/{userId}
         [HttpGet]
         [Route("user/{userId}")]
-        [ProducesResponseType(typeof(IEnumerable<Adoption>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<AdoptionResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAdoptionsByUserId([FromRoute] string userId)
         {
             try
             {
-                IEnumerable<Adoption> adoptions = await _adoptionRepository.GetByUserIdAsync(userId);
-                return Ok(adoptions);
+                var adoptions = await _adoptionRepository.GetByUserIdAsync(userId);
+                var adoptionResponses = _mapper.Map<IEnumerable<AdoptionResponse>>(adoptions);
+                return Ok(adoptionResponses);
             }
             catch (Exception ex)
             {
@@ -71,14 +98,15 @@ namespace Pet.API.Controllers
         // GET: api/adoptions/pet/{petId}
         [HttpGet]
         [Route("pet/{petId}")]
-        [ProducesResponseType(typeof(IEnumerable<Adoption>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<AdoptionResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAdoptionsByPetId([FromRoute] string petId)
         {
             try
             {
-                IEnumerable<Adoption> adoptions = await _adoptionRepository.GetByPetIdAsync(petId);
-                return Ok(adoptions);
+                var adoptions = await _adoptionRepository.GetByPetIdAsync(petId);
+                var adoptionResponses = _mapper.Map<IEnumerable<AdoptionResponse>>(adoptions);
+                return Ok(adoptionResponses);
             }
             catch (Exception ex)
             {
@@ -89,26 +117,35 @@ namespace Pet.API.Controllers
 
         // POST: api/adoptions
         [HttpPost]
-        [ProducesResponseType(typeof(Adoption), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(AdoptionResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> CreateAdoption([FromBody] Adoption adoption)
+        public async Task<IActionResult> CreateAdoption([FromBody] CreateAdoptionRequest request)
         {
+            if (request == null)
+                return BadRequest(new { message = "Adoption data is required." });
+
             try
             {
                 // Verify pet exists
-                PetEntity? pet = await _petRepository.GetByIdAsync(adoption.PetId);
+                PetEntity? pet = await _petRepository.GetByIdAsync(request.PetId);
                 if (pet == null)
                 {
                     return BadRequest(new { message = "Pet not found" });
                 }
 
+                // Map DTO to Entity
+                var adoption = _mapper.Map<Adoption>(request);
                 adoption.PetName = pet.Name;
-                Adoption createdAdoption = await _adoptionRepository.CreateAsync(adoption);
+
+                var createdAdoption = await _adoptionRepository.CreateAsync(adoption);
+
+                // Map Entity to Response DTO
+                var adoptionResponse = _mapper.Map<AdoptionResponse>(createdAdoption);
 
                 _logger.LogInformation($"Adoption application created: {createdAdoption.AdoptionId} for pet {pet.Name}");
 
-                return CreatedAtAction(nameof(GetAdoptionById), new { id = createdAdoption.AdoptionId }, createdAdoption);
+                return CreatedAtAction(nameof(GetAdoptionById), new { id = createdAdoption.AdoptionId }, adoptionResponse);
             }
             catch (Exception ex)
             {
@@ -117,14 +154,15 @@ namespace Pet.API.Controllers
             }
         }
 
-        // PUT: api/adoptions/{id}/status
-        [HttpPut]
+        // PATCH: api/adoptions/{id}/status
+        // Partial update for adoption status (used when staff/admin change adoption status)
+        [HttpPatch]
         [Route("{id}/status")]
-        [ProducesResponseType(typeof(Adoption), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AdoptionResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UpdateAdoptionStatus([FromRoute] string id, [FromBody] UpdateStatusRequest request)
+        public async Task<IActionResult> UpdateAdoptionStatus([FromRoute] string id, [FromBody] UpdateAdoptionStatusRequest request)
         {
             try
             {
@@ -177,7 +215,9 @@ namespace Pet.API.Controllers
 
                 _logger.LogInformation($"Adoption {id} status updated to {request.Status} by {request.ReviewedBy}");
 
-                return Ok(updatedAdoption);
+                // Map Entity to Response DTO
+                var adoptionResponse = _mapper.Map<AdoptionResponse>(updatedAdoption);
+                return Ok(adoptionResponse);
             }
             catch (Exception ex)
             {
@@ -185,13 +225,87 @@ namespace Pet.API.Controllers
                 return StatusCode(500, new { message = "Error updating adoption status", error = ex.Message });
             }
         }
+
+        // PUT: api/adoptions/{id}
+        // Updates an adoption application (only editable fields, not status)
+        [HttpPut("{id}")]
+        [ProducesResponseType(typeof(AdoptionResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<AdoptionResponse>> UpdateAdoption(string id, [FromBody] UpdateAdoptionRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { message = "Adoption id is required." });
+
+            if (request == null)
+                return BadRequest(new { message = "Adoption data is required." });
+
+            try
+            {
+                var existingAdoption = await _adoptionRepository.GetByIdAsync(id);
+                if (existingAdoption == null)
+                    return NotFound(new { message = "Adoption not found" });
+
+                // Map DTO to Entity, preserving non-editable fields
+                var adoption = _mapper.Map<Adoption>(request);
+                adoption.AdoptionId = id;
+                adoption.PetId = existingAdoption.PetId;
+                adoption.PetName = existingAdoption.PetName;
+                adoption.UserId = existingAdoption.UserId;
+                adoption.UserEmail = existingAdoption.UserEmail;
+                adoption.UserFirstName = existingAdoption.UserFirstName;
+                adoption.UserLastName = existingAdoption.UserLastName;
+                adoption.Status = existingAdoption.Status;
+                adoption.ApplicationDate = existingAdoption.ApplicationDate;
+                adoption.ReviewedDate = existingAdoption.ReviewedDate;
+                adoption.ReviewedBy = existingAdoption.ReviewedBy;
+                adoption.ReviewNotes = existingAdoption.ReviewNotes;
+
+                var updatedAdoption = await _adoptionRepository.UpdateAsync(adoption);
+
+                // Map Entity to Response DTO
+                var adoptionResponse = _mapper.Map<AdoptionResponse>(updatedAdoption);
+
+                Logger.LogInformation($"Adoption {id} updated");
+                return Ok(adoptionResponse);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"Error updating Adoption {id}");
+                return StatusCode(500, new { message = "Error updating Adoption", error = ex.Message });
+            }
+        }
+
+        // DELETE: api/adoptions/{id}
+        // Deletes an adoption application
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> DeleteAdoption(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { message = "Adoption id is required." });
+
+            try
+            {
+                var existingAdoption = await _adoptionRepository.GetByIdAsync(id);
+                if (existingAdoption == null)
+                    return NotFound(new { message = "Adoption not found" });
+
+                await _adoptionRepository.DeleteAsync(id);
+
+                Logger.LogInformation($"Adoption {id} deleted");
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"Error deleting Adoption {id}");
+                return StatusCode(500, new { message = "Error deleting Adoption", error = ex.Message });
+            }
+        }
     }
 
-    // DTO for updating adoption status
-    public class UpdateStatusRequest
-    {
-        public string Status { get; set; } = string.Empty; // Pending, Approved, Rejected
-        public string ReviewedBy { get; set; } = string.Empty;
-        public string? ReviewNotes { get; set; }
-    }
 }

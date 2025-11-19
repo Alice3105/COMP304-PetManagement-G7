@@ -1,0 +1,79 @@
+@model List<Pet.Web.Models.ViewModels.MedicalRecordViewModel>
+
+<div class="card shadow mt-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Medical Records</h5>
+    </div>
+    <div class="card-body">
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Veterinarian</th>
+                            <th>Description</th>
+                            <th>Vaccine</th>
+                            <th>Next Due</th>
+                            <th>Cost</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var record in Model)
+                        {
+                            <tr>
+                                <td>@record.RecordDate.ToString("MMM dd, yyyy")</td>
+                                <td>
+                                    <span class="badge bg-info">@record.RecordType</span>
+                                </td>
+                                <td>@record.VeterinarianName</td>
+                                <td>@(record.Description.Length > 50 ? record.Description.Substring(0, 50) + "..." : record.Description)</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(record.VaccineName))
+                                    {
+                                        <span class="badge bg-primary">@record.VaccineName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (record.NextDueDate.HasValue)
+                                    {
+                                        <span class="@(record.NextDueDate.Value < DateTime.UtcNow ? "text-danger" : record.NextDueDate.Value < DateTime.UtcNow.AddDays(30) ? "text-warning" : "")">
+                                            @record.NextDueDate.Value.ToString("MMM dd, yyyy")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>$@record.Cost.ToString("F2")</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editRecordModal_@record.RecordId">
+                                            Edit
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger delete-record-btn" data-record-id="@record.RecordId" data-record-type="@record.RecordType" data-record-date="@record.RecordDate.ToString("MMM dd, yyyy")">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted mb-0">No medical records available for this pet.</p>
+        }
+    </div>
+</div>
+

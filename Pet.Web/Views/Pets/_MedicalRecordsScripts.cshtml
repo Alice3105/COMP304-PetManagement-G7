@@ -1,0 +1,104 @@
+<script>
+    $(document).ready(function() {
+        // Handle medical record form submission
+        $('.medical-record-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            const form = $(this);
+            const recordId = form.find('input[name="RecordId"]').val();
+            // Convert datetime-local to ISO string
+            const recordDateValue = form.find('input[name="RecordDate"]').val();
+            const nextDueDateValue = form.find('input[name="NextDueDate"]').val();
+            
+            const formData = {
+                RecordId: form.find('input[name="RecordId"]').val(),
+                PetId: form.find('input[name="PetId"]').val(),
+                PetName: form.find('input[name="PetName"]').val(),
+                RecordType: form.find('select[name="RecordType"]').val(),
+                RecordDate: recordDateValue ? new Date(recordDateValue).toISOString() : null,
+                VeterinarianId: form.find('input[name="VeterinarianId"]').val(),
+                VeterinarianName: form.find('input[name="VeterinarianName"]').val(),
+                Description: form.find('textarea[name="Description"]').val(),
+                VaccineName: form.find('input[name="VaccineName"]').val(),
+                NextDueDate: nextDueDateValue ? new Date(nextDueDateValue).toISOString() : null,
+                Cost: parseFloat(form.find('input[name="Cost"]').val()) || 0,
+                Notes: form.find('textarea[name="Notes"]').val(),
+                CreatedDate: form.find('input[name="CreatedDate"]').val()
+            };
+
+            // Get anti-forgery token
+            const token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("UpdateMedicalRecord", "Pets")',
+                type: 'POST',
+                headers: {
+                    'RequestVerificationToken': token,
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify({ RecordId: recordId, Model: formData }),
+                contentType: 'application/json',
+                success: function(response) {
+                    if (response.success) {
+                        alert('Medical record updated successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (response.message || 'Failed to update medical record'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    let errorMessage = 'Error updating medical record';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage += ': ' + xhr.responseJSON.message;
+                    } else {
+                        errorMessage += ': ' + error;
+                    }
+                    alert(errorMessage);
+                }
+            });
+        });
+
+        // Handle delete medical record
+        $('.delete-record-btn').on('click', function() {
+            const recordId = $(this).data('record-id');
+            const recordType = $(this).data('record-type');
+            const recordDate = $(this).data('record-date');
+            
+            if (!confirm(`Are you sure you want to delete this medical record?\n\nType: ${recordType}\nDate: ${recordDate}\n\nThis action cannot be undone.`)) {
+                return;
+            }
+
+            // Get anti-forgery token
+            const token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("DeleteMedicalRecord", "Pets")',
+                type: 'POST',
+                headers: {
+                    'RequestVerificationToken': token,
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify({ recordId: recordId }),
+                contentType: 'application/json',
+                success: function(response) {
+                    if (response.success) {
+                        alert('Medical record deleted successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (response.message || 'Failed to delete medical record'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    let errorMessage = 'Error deleting medical record';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage += ': ' + xhr.responseJSON.message;
+                    } else {
+                        errorMessage += ': ' + error;
+                    }
+                    alert(errorMessage);
+                }
+            });
+        });
+    });
+</script>
+
