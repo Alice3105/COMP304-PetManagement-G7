@@ -152,6 +152,10 @@ namespace Pet.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Fetch medical records for this pet
+            List<MedicalRecordViewModel> medicalRecords = await _medicalRecordApiService.GetMedicalRecordsByPetIdAsync(id);
+            ViewBag.MedicalRecords = medicalRecords;
+
             return View(pet);
         }
 
@@ -184,6 +188,46 @@ namespace Pet.Web.Controllers
             return RedirectToAction(nameof(Details), new { id = model.PetId });
         }
 
+        // POST: /Pets/UpdateMedicalRecord
+        [HttpPost]
+        [SessionAuthorize("Staff", "Admin")]
+        public async Task<IActionResult> UpdateMedicalRecord([FromBody] UpdateMedicalRecordRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.RecordId) || request.Model == null)
+            {
+                return Json(new { success = false, message = "Invalid request data." });
+            }
+
+            bool success = await _medicalRecordApiService.UpdateMedicalRecordAsync(request.RecordId, request.Model);
+
+            if (!success)
+            {
+                return Json(new { success = false, message = "Failed to update medical record. Please try again." });
+            }
+
+            return Json(new { success = true, message = "Medical record updated successfully!" });
+        }
+
+        // POST: /Pets/DeleteMedicalRecord
+        [HttpPost]
+        [SessionAuthorize("Staff", "Admin")]
+        public async Task<IActionResult> DeleteMedicalRecord(string recordId)
+        {
+            if (string.IsNullOrEmpty(recordId))
+            {
+                return Json(new { success = false, message = "Medical Record id is required." });
+            }
+
+            bool success = await _medicalRecordApiService.DeleteMedicalRecordAsync(recordId);
+
+            if (!success)
+            {
+                return Json(new { success = false, message = "Failed to delete medical record. Please try again." });
+            }
+
+            return Json(new { success = true, message = "Medical record deleted successfully!" });
+        }
+
         // POST: /Pets/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -209,5 +253,11 @@ namespace Pet.Web.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+    }
+
+    public class UpdateMedicalRecordRequest
+    {
+        public string RecordId { get; set; } = string.Empty;
+        public MedicalRecordViewModel Model { get; set; } = new();
     }
 }

@@ -9,6 +9,8 @@ namespace Pet.API.Repositories.Interfaces
         Task<IEnumerable<Adoption>> GetAllAsync();
         Task<IEnumerable<Adoption>> GetByUserIdAsync(string userId);
         Task<IEnumerable<Adoption>> GetByPetIdAsync(string petId);
+        Task<Adoption> UpdateAsync(Adoption adoption);
         Task<Adoption> UpdateStatusAsync(string adoptionId, string status, string reviewedBy, string? reviewNotes = null);
+        Task DeleteAsync(string adoptionId);
     }
 }

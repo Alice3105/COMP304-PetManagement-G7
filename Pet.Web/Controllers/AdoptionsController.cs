@@ -248,5 +248,173 @@ namespace Pet.Web.Controllers
 
             return RedirectToAction(nameof(Details), new { id });
         }
+
+        // GET: /Adoptions/Edit/5
+        public async Task<IActionResult> Edit(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return NotFound();
+
+            string? userId = HttpContext.Session.GetString("UserId");
+            string? role = HttpContext.Session.GetString("Role");
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                TempData["Error"] = "You must be logged in to edit an adoption application";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            AdoptionViewModel? adoption = await _adoptionApiService.GetAdoptionByIdAsync(id);
+
+            if (adoption == null)
+            {
+                TempData["Error"] = "Adoption application not found";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Check authorization: only the owner can edit, and only if status is Pending
+            if (adoption.UserId != userId)
+            {
+                TempData["Error"] = "You are not authorized to edit this application";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (adoption.Status != "Pending")
+            {
+                TempData["Error"] = "You can only edit applications with Pending status";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            ViewBag.PetName = adoption.PetName;
+            ViewBag.PetId = adoption.PetId;
+            ViewBag.AdoptionId = adoption.AdoptionId;
+
+            // Map AdoptionViewModel to CreateAdoptionViewModel for editing
+            CreateAdoptionViewModel model = new CreateAdoptionViewModel
+            {
+                PetId = adoption.PetId,
+                PhoneNumber = adoption.PhoneNumber,
+                Address = adoption.Address,
+                HousingType = adoption.HousingType,
+                HasYard = adoption.HasYard,
+                HasOtherPets = adoption.HasOtherPets,
+                OtherPetsDescription = adoption.OtherPetsDescription,
+                HasChildren = adoption.HasChildren,
+                ChildrenAges = adoption.ChildrenAges,
+                EmploymentStatus = adoption.EmploymentStatus,
+                Reason = adoption.Reason
+            };
+
+            return View(model);
+        }
+
+        // POST: /Adoptions/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(string id, CreateAdoptionViewModel model)
+        {
+            if (string.IsNullOrEmpty(id))
+                return NotFound();
+
+            string? userId = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                TempData["Error"] = "You must be logged in to edit an adoption application";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            AdoptionViewModel? existingAdoption = await _adoptionApiService.GetAdoptionByIdAsync(id);
+
+            if (existingAdoption == null)
+            {
+                TempData["Error"] = "Adoption application not found";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Check authorization: only the owner can edit
+            if (existingAdoption.UserId != userId)
+            {
+                TempData["Error"] = "You are not authorized to edit this application";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Check status: only Pending applications can be edited
+            if (existingAdoption.Status != "Pending")
+            {
+                TempData["Error"] = "You can only edit applications with Pending status";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.PetName = existingAdoption.PetName;
+                ViewBag.PetId = existingAdoption.PetId;
+                return View(model);
+            }
+
+            bool success = await _adoptionApiService.UpdateAdoptionAsync(id, model);
+
+            if (!success)
+            {
+                TempData["Error"] = "Failed to update adoption application. Please try again.";
+                ViewBag.PetName = existingAdoption.PetName;
+                ViewBag.PetId = existingAdoption.PetId;
+                return View(model);
+            }
+
+            TempData["Success"] = "Adoption application updated successfully!";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // POST: /Adoptions/Delete/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return NotFound();
+
+            string? userId = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                TempData["Error"] = "You must be logged in to delete an adoption application";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            AdoptionViewModel? adoption = await _adoptionApiService.GetAdoptionByIdAsync(id);
+
+            if (adoption == null)
+            {
+                TempData["Error"] = "Adoption application not found";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Check authorization: only the owner can delete
+            if (adoption.UserId != userId)
+            {
+                TempData["Error"] = "You are not authorized to delete this application";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Check status: only Pending applications can be deleted
+            if (adoption.Status != "Pending")
+            {
+                TempData["Error"] = "You can only delete applications with Pending status";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            bool success = await _adoptionApiService.DeleteAdoptionAsync(id);
+
+            if (!success)
+            {
+                TempData["Error"] = "Failed to delete adoption application. Please try again.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            TempData["Success"] = "Adoption application deleted successfully!";
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

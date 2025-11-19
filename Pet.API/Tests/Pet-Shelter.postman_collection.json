@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "pet-shelter-api-2024",
     "name": "Pet Shelter Management API",
-    "description": "Complete API collection for Pet Shelter Management System\n\nThis collection includes:\n- Authentication endpoints (Register, Login)\n- Adoption management endpoints (Create, View, Update status)\n\nInstructions:\n1. Update {{baseUrl}} variable with your localhost URL (default: https://localhost:7001)\n2. Run authentication requests first to get API keys\n3. API keys are automatically stored in collection variables\n4. Set {{petId}} variable with a valid pet ID before testing adoption endpoints\n\nAuthentication: Email + BCrypt Password Hashing with Bearer Token (API Key)\n\nEndpoints:\n- Auth: Registration and login for different user roles (Admin, Staff, Veterinarian, ThirdParty)\n- Adoptions: Create, view, and manage adoption applications\n\nCreated for: COMP304 Pet Management Group 7",
+    "description": "Complete API collection for Pet Shelter Management System\n\nThis collection includes:\n- Authentication endpoints (Register, Login)\n- Pet management endpoints (CRUD operations)\n- Adoption management endpoints (Create, View, Update status)\n- Medical Records endpoints (Create, View by Pet)\n\nInstructions:\n1. Update {{baseUrl}} variable with your localhost URL (default: https://localhost:7148)\n2. Run authentication requests first to get API keys\n3. API keys are automatically stored in collection variables\n4. Set {{petId}} variable with a valid pet ID before testing adoption/medical record endpoints\n\nAuthentication: Email + BCrypt Password Hashing with Bearer Token (API Key)\n\nEndpoints:\n- Auth: Registration and login for different user roles (Admin, Staff, Veterinarian, ThirdParty)\n- Pets: Create, read, update, delete pets (supports JSON and multipart/form-data for file uploads)\n- Adoptions: Create, view, and manage adoption applications\n- Medical Records: Create and view medical records for pets\n\nCreated for: COMP304 Pet Management Group 7",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -576,6 +576,548 @@
       "response": []
     },
     {
+      "name": "Pets",
+      "item": [
+        {
+          "name": "21. Get All Pets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns array of pets\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    if (jsonData.length > 0) {",
+                  "        pm.collectionVariables.set(\"petId\", jsonData[0].petId);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pets"]
+            },
+            "description": "Get all pets in the system. Auto-sets petId variable from first pet if available."
+          },
+          "response": []
+        },
+        {
+          "name": "22. Get Pet By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns pet object\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('petId');",
+                  "    pm.expect(jsonData).to.have.property('name');",
+                  "    pm.expect(jsonData).to.have.property('species');",
+                  "    pm.collectionVariables.set(\"petId\", jsonData.petId);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pets/{{petId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pets", "{{petId}}"]
+            },
+            "description": "Get a specific pet by ID. Note: Set petId variable first or use a known pet ID."
+          },
+          "response": []
+        },
+        {
+          "name": "23. Create Pet (JSON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Pet created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('petId');",
+                  "    pm.expect(jsonData.name).to.equal('Buddy');",
+                  "    pm.expect(jsonData.species).to.equal('Dog');",
+                  "    pm.collectionVariables.set(\"petId\", jsonData.petId);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Buddy\",\n  \"species\": \"Dog\",\n  \"breed\": \"Golden Retriever\",\n  \"age\": 3,\n  \"gender\": \"Male\",\n  \"size\": \"Large\",\n  \"color\": \"Golden\",\n  \"description\": \"Friendly and energetic dog. Great with kids and other pets.\",\n  \"status\": \"Available\",\n  \"vaccinated\": true,\n  \"neutered\": true,\n  \"goodWithKids\": true,\n  \"goodWithPets\": true,\n  \"photoUrls\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pets"]
+            },
+            "description": "Create a new pet using JSON. Note: For file uploads, use multipart/form-data (not available in Postman JSON mode)."
+          },
+          "response": []
+        },
+        {
+          "name": "24. Update Pet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Pet updated successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.equal('Buddy Updated');",
+                  "    pm.expect(jsonData.description).to.include('Updated description');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": \"{{petId}}\",\n  \"name\": \"Buddy Updated\",\n  \"species\": \"Dog\",\n  \"breed\": \"Golden Retriever\",\n  \"age\": 4,\n  \"gender\": \"Male\",\n  \"size\": \"Large\",\n  \"color\": \"Golden\",\n  \"description\": \"Friendly and energetic dog. Updated description.\",\n  \"status\": \"Available\",\n  \"vaccinated\": true,\n  \"neutered\": true,\n  \"goodWithKids\": true,\n  \"goodWithPets\": true,\n  \"photoUrls\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pets/{{petId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pets", "{{petId}}"]
+            },
+            "description": "Update an existing pet. Note: Set petId variable first."
+          },
+          "response": []
+        },
+        {
+          "name": "25. Delete Pet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pets/{{petId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pets", "{{petId}}"]
+            },
+            "description": "Delete a pet by ID. Note: Set petId variable first. WARNING: This permanently deletes the pet!"
+          },
+          "response": []
+        },
+        {
+          "name": "26. Get Pet By ID - Not Found (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Error message about pet not found\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pets/invalid-pet-id-12345",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pets", "invalid-pet-id-12345"]
+            },
+            "description": "Try to get a pet with invalid ID - should return 404 Not Found"
+          },
+          "response": []
+        }
+      ],
+      "description": "Pet management endpoints for creating, viewing, updating, and deleting pets"
+    },
+    {
+      "name": "Medical Records",
+      "item": [
+        {
+          "name": "27. Get All Medical Records",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns array of medical records\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    if (jsonData.length > 0) {",
+                  "        pm.collectionVariables.set(\"recordId\", jsonData[0].recordId);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/medicalrecords",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicalrecords"]
+            },
+            "description": "Get all medical records in the system"
+          },
+          "response": []
+        },
+        {
+          "name": "28. Get Medical Record By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns medical record object\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('recordId');",
+                  "    pm.expect(jsonData).to.have.property('petId');",
+                  "    pm.expect(jsonData).to.have.property('recordType');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/medicalrecords/{{recordId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicalrecords", "{{recordId}}"]
+            },
+            "description": "Get a specific medical record by ID. Note: Set recordId variable first or use a known record ID."
+          },
+          "response": []
+        },
+        {
+          "name": "29. Get Medical Records By Pet ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns array of medical records\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/medicalrecords/pet/{{petId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicalrecords", "pet", "{{petId}}"]
+            },
+            "description": "Get all medical records for a specific pet. Note: Set petId variable first."
+          },
+          "response": []
+        },
+        {
+          "name": "30. Create Medical Record - Vaccination",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Medical record created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('recordId');",
+                  "    pm.expect(jsonData.recordType).to.equal('Vaccination');",
+                  "    pm.expect(jsonData.petId).to.equal(pm.collectionVariables.get('petId'));",
+                  "    pm.collectionVariables.set(\"recordId\", jsonData.recordId);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": \"{{petId}}\",\n  \"petName\": \"Buddy\",\n  \"recordType\": \"Vaccination\",\n  \"recordDate\": \"2024-01-15T00:00:00Z\",\n  \"veterinarianId\": \"{{vetUserId}}\",\n  \"veterinarianName\": \"Dr. Emily Thompson\",\n  \"description\": \"Annual vaccination checkup\",\n  \"vaccineName\": \"DHPP\",\n  \"nextDueDate\": \"2025-01-15T00:00:00Z\",\n  \"cost\": 75.00,\n  \"notes\": \"Pet is healthy and up to date on vaccinations\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/medicalrecords",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicalrecords"]
+            },
+            "description": "Create a new vaccination medical record. Note: Set petId variable first with a valid pet ID."
+          },
+          "response": []
+        },
+        {
+          "name": "31. Create Medical Record - General Checkup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Medical record created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('recordId');",
+                  "    pm.expect(jsonData.recordType).to.equal('General Checkup');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": \"{{petId}}\",\n  \"petName\": \"Buddy\",\n  \"recordType\": \"General Checkup\",\n  \"recordDate\": \"2024-01-20T00:00:00Z\",\n  \"veterinarianId\": \"{{vetUserId}}\",\n  \"veterinarianName\": \"Dr. Emily Thompson\",\n  \"description\": \"Routine health checkup. Pet is in good health.\",\n  \"vaccineName\": \"\",\n  \"cost\": 50.00,\n  \"notes\": \"No issues found. Continue current diet and exercise routine.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/medicalrecords",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicalrecords"]
+            },
+            "description": "Create a general checkup medical record. Note: Set petId variable first."
+          },
+          "response": []
+        },
+        {
+          "name": "32. Create Medical Record - Invalid Pet ID (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminApiKey}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"petId\": \"\",\n  \"recordType\": \"Vaccination\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/medicalrecords",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicalrecords"]
+            },
+            "description": "Try to create medical record with invalid data - should return 400 Bad Request"
+          },
+          "response": []
+        }
+      ],
+      "description": "Medical record management endpoints for creating and viewing medical records"
+    },
+    {
       "name": "Adoptions",
       "item": [
         {
@@ -809,7 +1351,7 @@
             }
           ],
           "request": {
-            "method": "PUT",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Content-Type",
@@ -861,7 +1403,7 @@
             }
           ],
           "request": {
-            "method": "PUT",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Content-Type",
@@ -949,8 +1491,14 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://localhost:7001",
+      "value": "https://localhost:7148",
       "type": "string"
+    },
+    {
+      "key": "recordId",
+      "value": "",
+      "type": "string",
+      "description": "Auto-set after creating a medical record, or set manually to test specific medical record endpoints"
     },
     {
       "key": "petId",
