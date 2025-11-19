@@ -45,7 +45,7 @@ namespace Pet.Web.Models.ViewModels
         public string? MedicalRecordDescription { get; set; }
         public string? MedicalRecordVaccineName { get; set; }
         public DateTime? MedicalRecordNextDueDate { get; set; }
-        public decimal MedicalRecordCost { get; set; }
+        public decimal? MedicalRecordCost { get; set; }
         public string? MedicalRecordNotes { get; set; }
     }
 }

@@ -26,7 +26,10 @@ namespace Pet.Web.Services
         {
             try
             {
-                AddAuthHeader();
+                _logger.LogInformation($"CreatePetAsync called for pet: {model.Name}, Species: {model.Species}, Breed: {model.Breed}");
+                
+                string? apiKey = _httpContextAccessor?.HttpContext?.Session?.GetString("ApiKey");
+                _logger.LogInformation($"API Key present in session: {!string.IsNullOrEmpty(apiKey)}");
 
                 using MultipartFormDataContent formData = new MultipartFormDataContent();
                 AddFormField(formData, "Name", model.Name);
@@ -44,25 +47,56 @@ namespace Pet.Web.Services
 
                 if (model.Photo != null)
                 {
+                    _logger.LogInformation($"Photo file provided: {model.Photo.FileName}, Size: {model.Photo.Length} bytes, ContentType: {model.Photo.ContentType}");
                     StreamContent fileContent = new StreamContent(model.Photo.OpenReadStream());
                     fileContent.Headers.ContentType = new MediaTypeHeaderValue(model.Photo.ContentType);
                     formData.Add(fileContent, "Photo", model.Photo.FileName);
                 }
+                else
+                {
+                    _logger.LogInformation("No photo file provided");
+                }
 
-                HttpResponseMessage response = await _httpClient.PostAsync("api/pets", formData);
+                string endpoint = "api/pets";
+                string fullUrl = $"{_httpClient.BaseAddress}{endpoint}";
+                _logger.LogInformation($"Sending POST request to: {fullUrl}");
+
+                using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+                {
+                    Content = formData
+                };
+
+                // Set Authorization header on the request message
+                if (!string.IsNullOrEmpty(apiKey))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                    _logger.LogInformation("Authorization header set on request");
+                }
+                else
+                {
+                    _logger.LogWarning("No API key found in session - request will be sent without authorization");
+                }
+
+                HttpResponseMessage response = await _httpClient.SendAsync(request);
+
+                _logger.LogInformation($"Response received: StatusCode={response.StatusCode}, IsSuccessStatusCode={response.IsSuccessStatusCode}");
 
                 if (response.IsSuccessStatusCode)
                 {
                     string content = await response.Content.ReadAsStringAsync();
-                    return JsonSerializer.Deserialize<PetViewModel>(content, JsonOptions);
+                    _logger.LogInformation($"Response content length: {content.Length} characters");
+                    var pet = JsonSerializer.Deserialize<PetViewModel>(content, JsonOptions);
+                    _logger.LogInformation($"Pet created successfully: {pet?.PetId} - {pet?.Name}");
+                    return pet;
                 }
 
-                _logger.LogWarning($"Failed to create pet: {response.StatusCode}");
+                string errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning($"Failed to create pet: StatusCode={response.StatusCode}, Response={errorContent}");
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating pet via API");
+                _logger.LogError(ex, $"Error creating pet via API. Exception: {ex.Message}, StackTrace: {ex.StackTrace}");
                 return null;
             }
         }

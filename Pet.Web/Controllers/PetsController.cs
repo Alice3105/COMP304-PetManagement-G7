@@ -60,18 +60,42 @@ namespace Pet.Web.Controllers
         [SessionAuthorize("Staff", "Admin")]
         public async Task<IActionResult> Create(CreatePetViewModel model)
         {
+            _logger.LogInformation($"PetsController.Create POST called. Model valid: {ModelState.IsValid}, Pet Name: {model?.Name}");
+            
+            if (model == null)
+            {
+                _logger.LogWarning("Create pet called with null model");
+                TempData["Error"] = "Invalid pet data.";
+                return RedirectToAction(nameof(Index));
+            }
+            
             if (!ModelState.IsValid)
             {
+                var errors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .Select(x => new { Field = x.Key, Errors = x.Value?.Errors.Select(e => e.ErrorMessage) })
+                    .ToList();
+                
+                _logger.LogWarning($"Model validation failed. Field errors:");
+                foreach (var error in errors)
+                {
+                    _logger.LogWarning($"  Field '{error.Field}': {string.Join(", ", error.Errors ?? Enumerable.Empty<string>())}");
+                }
+                
                 return View(model);
             }
 
+            _logger.LogInformation($"Calling _petApiService.CreatePetAsync for pet: {model.Name}");
             PetViewModel? createdPet = await _petApiService.CreatePetAsync(model);
 
             if (createdPet == null)
             {
+                _logger.LogWarning($"Failed to create pet. CreatePetAsync returned null.");
                 TempData["Error"] = "Failed to create pet. Please try again.";
                 return View(model);
             }
+            
+            _logger.LogInformation($"Pet created successfully: {createdPet.PetId} - {createdPet.Name}");
 
             if (model.CreateMedicalRecord && !string.IsNullOrWhiteSpace(model.MedicalRecordType))
             {
@@ -91,7 +115,7 @@ namespace Pet.Web.Controllers
                     Description = model.MedicalRecordDescription ?? "",
                     VaccineName = model.MedicalRecordVaccineName ?? "",
                     NextDueDate = model.MedicalRecordNextDueDate,
-                    Cost = model.MedicalRecordCost,
+                    Cost = model.MedicalRecordCost ?? 0,
                     Notes = model.MedicalRecordNotes ?? ""
                 };
 
