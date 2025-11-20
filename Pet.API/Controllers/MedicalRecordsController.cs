@@ -36,13 +36,14 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<MedicalRecordResponse>>> GetByPetId(string petId)
         {
+            _logger.LogInformation($"Endpoint: GetByPetId, Method: GET, PetId: {petId}");
             if (string.IsNullOrWhiteSpace(petId))
                 return BadRequest(new { message = "Pet id is required." });
 
             try
             {
-                var records = await _medicalRecordRepository.GetByPetIdAsync(petId);
-                var recordResponses = _mapper.Map<IEnumerable<MedicalRecordResponse>>(records);
+                IEnumerable<MedicalRecord> records = await _medicalRecordRepository.GetByPetIdAsync(petId);
+                IEnumerable<MedicalRecordResponse> recordResponses = _mapper.Map<IEnumerable<MedicalRecordResponse>>(records);
                 return Ok(recordResponses);
             }
             catch (Exception ex)
@@ -61,16 +62,17 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<MedicalRecordResponse>> GetById(string id)
         {
+            _logger.LogInformation($"Endpoint: GetById, Method: GET, RecordId: {id}");
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { message = "Medical Record id is required." });
 
             try
             {
-                var record = await _medicalRecordRepository.GetByIdAsync(id);
+                MedicalRecord? record = await _medicalRecordRepository.GetByIdAsync(id);
                 if (record == null)
                     return NotFound(new { message = "Medical Record not found" });
 
-                var recordResponse = _mapper.Map<MedicalRecordResponse>(record);
+                MedicalRecordResponse recordResponse = _mapper.Map<MedicalRecordResponse>(record);
                 return Ok(recordResponse);
             }
             catch (Exception ex)
@@ -87,10 +89,11 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<MedicalRecordResponse>>> GetAll()
         {
+            _logger.LogInformation($"Endpoint: GetAll, Method: GET");
             try
             {
-                var records = await _medicalRecordRepository.GetAllAsync();
-                var recordResponses = _mapper.Map<IEnumerable<MedicalRecordResponse>>(records);
+                IEnumerable<MedicalRecord> records = await _medicalRecordRepository.GetAllAsync();
+                IEnumerable<MedicalRecordResponse> recordResponses = _mapper.Map<IEnumerable<MedicalRecordResponse>>(records);
                 return Ok(recordResponses);
             }
             catch (Exception ex)
@@ -108,6 +111,7 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<MedicalRecordResponse>> Create([FromBody] CreateMedicalRecordRequest request)
         {
+            _logger.LogInformation($"Endpoint: Create, Method: POST");
             if (request == null)
                 return BadRequest(new { message = "Medical Record data is required." });
 
@@ -124,13 +128,13 @@ namespace Pet.API.Controllers
                 }
 
                 // Map DTO to Entity
-                var record = _mapper.Map<MedicalRecord>(request);
+                MedicalRecord record = _mapper.Map<MedicalRecord>(request);
                 record.PetName = pet.Name;
                 
-                var createdRecord = await _medicalRecordRepository.CreateAsync(record);
+                MedicalRecord createdRecord = await _medicalRecordRepository.CreateAsync(record);
                 
                 // Map Entity to Response DTO
-                var recordResponse = _mapper.Map<MedicalRecordResponse>(createdRecord);
+                MedicalRecordResponse recordResponse = _mapper.Map<MedicalRecordResponse>(createdRecord);
                 
                 Logger.LogInformation($"Medical Record created: {createdRecord.RecordId}");
                 return CreatedAtAction(nameof(GetById), new { id = createdRecord.RecordId }, recordResponse);
@@ -151,6 +155,7 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<MedicalRecordResponse>> Update(string id, [FromBody] UpdateMedicalRecordRequest request)
         {
+            _logger.LogInformation($"Endpoint: Update, Method: PUT, RecordId: {id}");
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { message = "Medical Record id is required." });
 
@@ -162,7 +167,7 @@ namespace Pet.API.Controllers
 
             try
             {
-                var existingRecord = await _medicalRecordRepository.GetByIdAsync(id);
+                MedicalRecord? existingRecord = await _medicalRecordRepository.GetByIdAsync(id);
                 if (existingRecord == null)
                     return NotFound(new { message = "Medical Record not found" });
 
@@ -173,16 +178,16 @@ namespace Pet.API.Controllers
                 }
 
                 // Map DTO to Entity, preserving RecordId and CreatedDate
-                var record = _mapper.Map<MedicalRecord>(request);
+                MedicalRecord record = _mapper.Map<MedicalRecord>(request);
                 record.RecordId = id;
                 record.PetName = pet.Name;
                 record.CreatedDate = existingRecord.CreatedDate;
                 record.UpdatedDate = DateTime.UtcNow;
 
-                var updatedRecord = await _medicalRecordRepository.UpdateAsync(record);
+                MedicalRecord updatedRecord = await _medicalRecordRepository.UpdateAsync(record);
 
                 // Map Entity to Response DTO
-                var recordResponse = _mapper.Map<MedicalRecordResponse>(updatedRecord);
+                MedicalRecordResponse recordResponse = _mapper.Map<MedicalRecordResponse>(updatedRecord);
 
                 Logger.LogInformation($"Medical Record {id} updated");
                 return Ok(recordResponse);
@@ -191,84 +196,6 @@ namespace Pet.API.Controllers
             {
                 Logger.LogError(ex, $"Error updating Medical Record {id}");
                 return StatusCode(500, new { message = "Error updating Medical Record", error = ex.Message });
-            }
-        }
-
-        // PATCH: api/medicalrecords/{id}
-        // Updates specific fields of an existing medical record
-        [HttpPatch("{id}")]
-        [ProducesResponseType(typeof(MedicalRecordResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<MedicalRecordResponse>> Patch(string id, [FromBody] UpdateMedicalRecordPatchRequest request)
-        {
-            if (string.IsNullOrWhiteSpace(id))
-                return BadRequest(new { message = "Medical Record id is required." });
-
-            if (request == null)
-                return BadRequest(new { message = "Medical Record data is required." });
-
-            try
-            {
-                var existingRecord = await _medicalRecordRepository.GetByIdAsync(id);
-                if (existingRecord == null)
-                    return NotFound(new { message = "Medical Record not found" });
-
-                // Update only fields that are provided (not null)
-                if (request.PetId != null)
-                {
-                    // Verify pet exists if PetId is being updated
-                    PetEntity? pet = await _petRepository.GetByIdAsync(request.PetId);
-                    if (pet == null)
-                    {
-                        return BadRequest(new { message = "Pet not found" });
-                    }
-                    existingRecord.PetId = request.PetId;
-                    existingRecord.PetName = pet.Name;
-                }
-
-                if (request.RecordType != null)
-                    existingRecord.RecordType = request.RecordType;
-
-                if (request.RecordDate.HasValue)
-                    existingRecord.RecordDate = request.RecordDate.Value;
-
-                if (request.VeterinarianId != null)
-                    existingRecord.VeterinarianId = request.VeterinarianId;
-
-                if (request.VeterinarianName != null)
-                    existingRecord.VeterinarianName = request.VeterinarianName;
-
-                if (request.Description != null)
-                    existingRecord.Description = request.Description;
-
-                if (request.VaccineName != null)
-                    existingRecord.VaccineName = request.VaccineName;
-
-                if (request.NextDueDate.HasValue)
-                    existingRecord.NextDueDate = request.NextDueDate;
-
-                if (request.Cost.HasValue)
-                    existingRecord.Cost = request.Cost.Value;
-
-                if (request.Notes != null)
-                    existingRecord.Notes = request.Notes;
-
-                existingRecord.UpdatedDate = DateTime.UtcNow;
-
-                var updatedRecord = await _medicalRecordRepository.UpdateAsync(existingRecord);
-
-                // Map Entity to Response DTO
-                var recordResponse = _mapper.Map<MedicalRecordResponse>(updatedRecord);
-
-                Logger.LogInformation($"Medical Record {id} patched");
-                return Ok(recordResponse);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, $"Error patching Medical Record {id}");
-                return StatusCode(500, new { message = "Error patching Medical Record", error = ex.Message });
             }
         }
 
@@ -281,12 +208,13 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(string id)
         {
+            _logger.LogInformation($"Endpoint: Delete, Method: DELETE, RecordId: {id}");
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { message = "Medical Record id is required." });
 
             try
             {
-                var existingRecord = await _medicalRecordRepository.GetByIdAsync(id);
+                MedicalRecord? existingRecord = await _medicalRecordRepository.GetByIdAsync(id);
                 if (existingRecord == null)
                     return NotFound(new { message = "Medical Record not found" });
 

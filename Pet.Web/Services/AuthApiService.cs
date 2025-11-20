@@ -18,6 +18,7 @@ namespace Pet.Web.Services
 
         public async Task<UserSessionModel?> RegisterAsync(RegisterViewModel model)
         {
+            _logger.LogInformation($"Service: AuthApiService, Method: RegisterAsync, Email: {model?.Email ?? "unknown"}");
             try
             {
                 object requestData = new
@@ -63,6 +64,7 @@ namespace Pet.Web.Services
 
         public async Task<UserSessionModel?> LoginAsync(LoginViewModel model)
         {
+            _logger.LogInformation($"Service: AuthApiService, Method: LoginAsync, Email: {model?.Email ?? "unknown"}");
             try
             {
                 object requestData = new

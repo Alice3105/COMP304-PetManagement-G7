@@ -17,13 +17,13 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label asp-for="Name" class="form-label">Pet Name</label>
+                                <label asp-for="Name" class="form-label">Pet Name <span class="text-danger">*</span></label>
                                 <input asp-for="Name" class="form-control" placeholder="e.g., Buddy" required />
                                 <span asp-validation-for="Name" class="text-danger"></span>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label asp-for="Species" class="form-label">Species</label>
+                                <label asp-for="Species" class="form-label">Species <span class="text-danger">*</span></label>
                                 <select asp-for="Species" class="form-select" required>
                                     <option value="">-- Select Species --</option>
                                     <option value="Dog">Dog</option>
@@ -38,13 +38,13 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label asp-for="Breed" class="form-label">Breed</label>
+                                <label asp-for="Breed" class="form-label">Breed <span class="text-danger">*</span></label>
                                 <input asp-for="Breed" class="form-control" placeholder="e.g., Golden Retriever" required />
                                 <span asp-validation-for="Breed" class="text-danger"></span>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label asp-for="Age" class="form-label">Age (years)</label>
+                                <label asp-for="Age" class="form-label">Age (years) <span class="text-danger">*</span></label>
                                 <input asp-for="Age" type="number" class="form-control" min="0" max="30" placeholder="e.g., 3" required />
                                 <span asp-validation-for="Age" class="text-danger"></span>
                             </div>
@@ -52,7 +52,7 @@
 
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label asp-for="Gender" class="form-label">Gender</label>
+                                <label asp-for="Gender" class="form-label">Gender <span class="text-danger">*</span></label>
                                 <select asp-for="Gender" class="form-select" required>
                                     <option value="">-- Select --</option>
                                     <option value="Male">Male</option>
@@ -62,7 +62,7 @@
                             </div>
 
                             <div class="col-md-4 mb-3">
-                                <label asp-for="Size" class="form-label">Size</label>
+                                <label asp-for="Size" class="form-label">Size <span class="text-danger">*</span></label>
                                 <select asp-for="Size" class="form-select" required>
                                     <option value="">-- Select --</option>
                                     <option value="Small">Small</option>
@@ -73,14 +73,14 @@
                             </div>
 
                             <div class="col-md-4 mb-3">
-                                <label asp-for="Color" class="form-label">Color</label>
+                                <label asp-for="Color" class="form-label">Color <span class="text-danger">*</span></label>
                                 <input asp-for="Color" class="form-control" placeholder="e.g., Brown" required />
                                 <span asp-validation-for="Color" class="text-danger"></span>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Description" class="form-label">Description</label>
+                            <label asp-for="Description" class="form-label">Description <span class="text-danger">*</span></label>
                             <textarea asp-for="Description" class="form-control" rows="4" placeholder="Describe the pet's personality, habits, and any special needs" required></textarea>
                             <span asp-validation-for="Description" class="text-danger"></span>
                         </div>
@@ -95,14 +95,16 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="form-check">
-                                    <input asp-for="Vaccinated" class="form-check-input" type="checkbox" />
+                                    <input type="hidden" asp-for="Vaccinated" value="false" />
+                                    <input asp-for="Vaccinated" class="form-check-input" type="checkbox" value="true" />
                                     <label asp-for="Vaccinated" class="form-check-label">Vaccinated</label>
                                 </div>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <div class="form-check">
-                                    <input asp-for="Neutered" class="form-check-input" type="checkbox" />
+                                    <input type="hidden" asp-for="Neutered" value="false" />
+                                    <input asp-for="Neutered" class="form-check-input" type="checkbox" value="true" />
                                     <label asp-for="Neutered" class="form-check-label">Neutered/Spayed</label>
                                 </div>
                             </div>
@@ -111,14 +113,16 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="form-check">
-                                    <input asp-for="GoodWithKids" class="form-check-input" type="checkbox" />
+                                    <input type="hidden" asp-for="GoodWithKids" value="false" />
+                                    <input asp-for="GoodWithKids" class="form-check-input" type="checkbox" value="true" />
                                     <label asp-for="GoodWithKids" class="form-check-label">Good with Kids</label>
                                 </div>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <div class="form-check">
-                                    <input asp-for="GoodWithPets" class="form-check-input" type="checkbox" />
+                                    <input type="hidden" asp-for="GoodWithPets" value="false" />
+                                    <input asp-for="GoodWithPets" class="form-check-input" type="checkbox" value="true" />
                                     <label asp-for="GoodWithPets" class="form-check-label">Good with Other Pets</label>
                                 </div>
                             </div>
@@ -128,7 +132,8 @@
                         <div class="card mb-3">
                             <div class="card-header bg-info text-white">
                                 <div class="form-check">
-                                    <input asp-for="CreateMedicalRecord" class="form-check-input" type="checkbox" id="createMedicalRecord" />
+                                    <input type="hidden" asp-for="CreateMedicalRecord" value="false" />
+                                    <input asp-for="CreateMedicalRecord" class="form-check-input" type="checkbox" value="true" id="createMedicalRecord" />
                                     <label class="form-check-label text-white" for="createMedicalRecord">
                                         <strong>Add Initial Medical Record (Optional)</strong>
                                     </label>
@@ -206,34 +211,35 @@
             const recordTypeSelect = document.querySelector('select[name="MedicalRecordType"]');
             const vaccineNameSection = document.getElementById('vaccineNameSection');
 
-            // Toggle medical record section visibility
-            createMedicalRecordCheckbox.addEventListener('change', function() {
-                if (this.checked) {
-                    medicalRecordSection.style.display = 'block';
-                } else {
-                    medicalRecordSection.style.display = 'none';
-                    // Clear all medical record fields when section is hidden
-                    const medicalRecordFields = medicalRecordSection.querySelectorAll('input, select, textarea');
-                    medicalRecordFields.forEach(field => {
-                        if (field.type === 'checkbox') {
-                            field.checked = false;
-                        } else if (field.type === 'number') {
-                            field.value = '';
-                        } else {
-                            field.value = '';
-                        }
-                    });
-                }
-            });
+            if (createMedicalRecordCheckbox) {
+                createMedicalRecordCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        medicalRecordSection.style.display = 'block';
+                    } else {
+                        medicalRecordSection.style.display = 'none';
+                        const medicalRecordFields = medicalRecordSection.querySelectorAll('input, select, textarea');
+                        medicalRecordFields.forEach(field => {
+                            if (field.type === 'checkbox') {
+                                field.checked = false;
+                            } else if (field.type === 'number') {
+                                field.value = '';
+                            } else {
+                                field.value = '';
+                            }
+                        });
+                    }
+                });
+            }
 
-            // Show/hide vaccine name field based on record type
-            recordTypeSelect.addEventListener('change', function() {
-                if (this.value === 'Vaccination') {
-                    vaccineNameSection.style.display = 'block';
-                } else {
-                    vaccineNameSection.style.display = 'none';
-                }
-            });
+            if (recordTypeSelect) {
+                recordTypeSelect.addEventListener('change', function() {
+                    if (this.value === 'Vaccination') {
+                        vaccineNameSection.style.display = 'block';
+                    } else {
+                        vaccineNameSection.style.display = 'none';
+                    }
+                });
+            }
         });
     </script>
 }

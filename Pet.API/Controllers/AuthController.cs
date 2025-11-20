@@ -30,6 +30,7 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Register([FromBody] SimpleRegisterRequest request)
         {
+            _logger.LogInformation($"Endpoint: Register, Method: POST");
             try
             {
                 // Check if user already exists
@@ -94,6 +95,7 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Login([FromBody] SimpleLoginRequest request)
         {
+            _logger.LogInformation($"Endpoint: Login, Method: POST");
             try
             {
                 SimpleUser? user = await GetUserByEmail(request.Email);
@@ -143,6 +145,7 @@ namespace Pet.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult Test()
         {
+            _logger.LogInformation($"Endpoint: Test, Method: GET");
             return Ok(new
             {
                 message = "Simple Auth controller is working!",

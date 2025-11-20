@@ -24,13 +24,13 @@
                         <h5 class="mt-3 mb-3">Contact Information</h5>
 
                         <div class="mb-3">
-                            <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                            <label asp-for="PhoneNumber" class="form-label">Phone Number <span class="text-danger">*</span></label>
                             <input asp-for="PhoneNumber" class="form-control" placeholder="(123) 456-7890" required />
                             <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Address" class="form-label">Full Address</label>
+                            <label asp-for="Address" class="form-label">Full Address <span class="text-danger">*</span></label>
                             <textarea asp-for="Address" class="form-control" rows="2" placeholder="Street, City, State, ZIP" required></textarea>
                             <span asp-validation-for="Address" class="text-danger"></span>
                         </div>
@@ -38,7 +38,7 @@
                         <h5 class="mt-4 mb-3">Housing Information</h5>
 
                         <div class="mb-3">
-                            <label asp-for="HousingType" class="form-label">Housing Type</label>
+                            <label asp-for="HousingType" class="form-label">Housing Type <span class="text-danger">*</span></label>
                             <select asp-for="HousingType" class="form-select" required>
                                 <option value="">-- Select --</option>
                                 <option value="House">House</option>
@@ -67,8 +67,9 @@
                         </div>
 
                         <div class="mb-3" id="otherPetsDiv" style="display: none;">
-                            <label asp-for="OtherPetsDescription" class="form-label">Please describe your other pets</label>
-                            <textarea asp-for="OtherPetsDescription" class="form-control" rows="2" placeholder="e.g., 2 dogs, 1 cat"></textarea>
+                            <label asp-for="OtherPetsDescription" class="form-label">Please describe your other pets <span class="text-danger" id="otherPetsRequired" style="display: none;">*</span></label>
+                            <textarea asp-for="OtherPetsDescription" id="otherPetsDescription" class="form-control" rows="2" placeholder="e.g., 2 dogs, 1 cat"></textarea>
+                            <span asp-validation-for="OtherPetsDescription" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
@@ -79,12 +80,13 @@
                         </div>
 
                         <div class="mb-3" id="childrenAgesDiv" style="display: none;">
-                            <label asp-for="ChildrenAges" class="form-label">Ages of children</label>
-                            <input asp-for="ChildrenAges" class="form-control" placeholder="e.g., 5, 8, 12" />
+                            <label asp-for="ChildrenAges" class="form-label">Ages of children <span class="text-danger" id="childrenAgesRequired" style="display: none;">*</span></label>
+                            <input asp-for="ChildrenAges" id="childrenAges" class="form-control" placeholder="e.g., 5, 8, 12" />
+                            <span asp-validation-for="ChildrenAges" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="EmploymentStatus" class="form-label">Employment Status</label>
+                            <label asp-for="EmploymentStatus" class="form-label">Employment Status <span class="text-danger">*</span></label>
                             <select asp-for="EmploymentStatus" class="form-select" required>
                                 <option value="">-- Select --</option>
                                 <option value="Full-time">Full-time</option>
@@ -100,7 +102,7 @@
                         <h5 class="mt-4 mb-3">About You</h5>
 
                         <div class="mb-3">
-                            <label asp-for="Reason" class="form-label">Why do you want to adopt @ViewBag.PetName?</label>
+                            <label asp-for="Reason" class="form-label">Why do you want to adopt @ViewBag.PetName? <span class="text-danger">*</span></label>
                             <textarea asp-for="Reason" class="form-control" rows="4" placeholder="Tell us why you're interested in adopting this pet and what you can offer them..." required></textarea>
                             <span asp-validation-for="Reason" class="text-danger"></span>
                         </div>
@@ -118,13 +120,5 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    <script>
-        document.getElementById('hasOtherPetsCheck').addEventListener('change', function() {
-            document.getElementById('otherPetsDiv').style.display = this.checked ? 'block' : 'none';
-        });
-
-        document.getElementById('hasChildrenCheck').addEventListener('change', function() {
-            document.getElementById('childrenAgesDiv').style.display = this.checked ? 'block' : 'none';
-        });
-    </script>
+    <script src="~/js/adoption-form.js"></script>
 }

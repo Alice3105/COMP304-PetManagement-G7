@@ -32,10 +32,11 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<PetResponse>>> GetAll()
         {
+            _logger.LogInformation($"Endpoint: GetAll, Method: GET");
             try
             {
-                var pets = await _petRepository.GetAllAsync();
-                var petResponses = _mapper.Map<IEnumerable<PetResponse>>(pets);
+                IEnumerable<PetEntity> pets = await _petRepository.GetAllAsync();
+                IEnumerable<PetResponse> petResponses = _mapper.Map<IEnumerable<PetResponse>>(pets);
                 return Ok(petResponses);
             }
             catch (Exception ex)
@@ -54,16 +55,17 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetResponse>> GetById(string id)
         {
+            _logger.LogInformation($"Endpoint: GetById, Method: GET, PetId: {id}");
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { message = "Pet id is required." });
 
             try
             {
-                var pet = await _petRepository.GetByIdAsync(id);
+                PetEntity? pet = await _petRepository.GetByIdAsync(id);
                 if (pet == null)
                     return NotFound(new { message = "Pet not found" });
 
-                var petResponse = _mapper.Map<PetResponse>(pet);
+                PetResponse petResponse = _mapper.Map<PetResponse>(pet);
                 return Ok(petResponse);
             }
             catch (Exception ex)
@@ -81,6 +83,7 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetResponse>> Create()
         {
+            _logger.LogInformation($"Endpoint: Create, Method: POST");
             // Check if request is multipart form data (file upload)
             if (Request.HasFormContentType)
             {
@@ -96,7 +99,7 @@ namespace Pet.API.Controllers
                 Request.EnableBuffering();
                 Request.Body.Position = 0;
 
-                using var reader = new StreamReader(Request.Body, leaveOpen: true);
+                using StreamReader reader = new StreamReader(Request.Body, leaveOpen: true);
                 string jsonBody = await reader.ReadToEndAsync();
                 Request.Body.Position = 0;
 
@@ -115,14 +118,14 @@ namespace Pet.API.Controllers
                     return BadRequest(new { message = "Pet data is required." });
                 }
 
-                var pet = _mapper.Map<PetEntity>(request);
+                PetEntity pet = _mapper.Map<PetEntity>(request);
                 pet.PetId = Guid.NewGuid().ToString();
 
                 // Save to database
-                var createdPet = await _petRepository.CreateAsync(pet);
+                PetEntity createdPet = await _petRepository.CreateAsync(pet);
                 
                 // Map Entity to Response DTO
-                var petResponse = _mapper.Map<PetResponse>(createdPet);
+                PetResponse petResponse = _mapper.Map<PetResponse>(createdPet);
                 
                 Logger.LogInformation($"Pet created: {createdPet.PetId}");
                 return CreatedAtAction(nameof(GetById), new { id = createdPet.PetId }, petResponse);
@@ -144,7 +147,7 @@ namespace Pet.API.Controllers
         {
             try
             {
-                var form = await Request.ReadFormAsync();
+                IFormCollection form = await Request.ReadFormAsync();
                 
                 string name = form["Name"].ToString();
                 string species = form["Species"].ToString();
@@ -169,7 +172,7 @@ namespace Pet.API.Controllers
                 bool goodWithPets = bool.TryParse(form["GoodWithPets"].ToString(), out bool gwp) && gwp;
 
                 // Create DTO from form data
-                var createRequest = new CreatePetRequest
+                CreatePetRequest createRequest = new CreatePetRequest
                 {
                     Name = name,
                     Species = species,
@@ -187,13 +190,13 @@ namespace Pet.API.Controllers
                 };
 
                 // Map DTO to Entity
-                var pet = _mapper.Map<PetEntity>(createRequest);
+                PetEntity pet = _mapper.Map<PetEntity>(createRequest);
                 pet.PetId = Guid.NewGuid().ToString();
 
                 // Handle file upload
                 if (form.Files != null && form.Files.Count > 0)
                 {
-                    var photoFile = form.Files["Photo"];
+                    IFormFile? photoFile = form.Files["Photo"];
                     if (photoFile != null && photoFile.Length > 0)
                     {
                         try
@@ -212,10 +215,10 @@ namespace Pet.API.Controllers
                 }
 
                 // Save to database
-                var createdPet = await _petRepository.CreateAsync(pet);
+                PetEntity createdPet = await _petRepository.CreateAsync(pet);
                 
                 // Map Entity to Response DTO
-                var petResponse = _mapper.Map<PetResponse>(createdPet);
+                PetResponse petResponse = _mapper.Map<PetResponse>(createdPet);
                 
                 Logger.LogInformation($"Pet created: {createdPet.PetId}");
                 return CreatedAtAction(nameof(GetById), new { id = createdPet.PetId }, petResponse);
@@ -236,6 +239,7 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PetResponse>> Update(string id, [FromBody] UpdatePetRequest request)
         {
+            _logger.LogInformation($"Endpoint: Update, Method: PUT, PetId: {id}");
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { message = "Pet id is required." });
 
@@ -244,21 +248,21 @@ namespace Pet.API.Controllers
 
             try
             {
-                var existingPet = await _petRepository.GetByIdAsync(id);
+                PetEntity? existingPet = await _petRepository.GetByIdAsync(id);
                 if (existingPet == null)
                     return NotFound(new { message = "Pet not found" });
 
                 // Map DTO to Entity, preserving PetId and timestamps
-                var pet = _mapper.Map<PetEntity>(request);
+                PetEntity pet = _mapper.Map<PetEntity>(request);
                 pet.PetId = id;
                 pet.IntakeDate = existingPet.IntakeDate;
                 pet.CreatedDate = existingPet.CreatedDate;
                 pet.UpdatedDate = DateTime.UtcNow;
 
-                var updatedPet = await _petRepository.UpdateAsync(pet);
+                PetEntity updatedPet = await _petRepository.UpdateAsync(pet);
                 
                 // Map Entity to Response DTO
-                var petResponse = _mapper.Map<PetResponse>(updatedPet);
+                PetResponse petResponse = _mapper.Map<PetResponse>(updatedPet);
                 
                 Logger.LogInformation($"Pet {id} updated");
                 return Ok(petResponse);
@@ -279,6 +283,7 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(string id)
         {
+            _logger.LogInformation($"Endpoint: Delete, Method: DELETE, PetId: {id}");
             return await DeleteAsync<PetEntity, string>(
                 id,
                 _petRepository.GetByIdAsync,

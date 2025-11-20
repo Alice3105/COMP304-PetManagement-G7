@@ -57,6 +57,7 @@ namespace Pet.Web.Controllers
 
             if (adoption == null)
             {
+                _logger.LogWarning($"Adoption not found: {id}");
                 TempData["Error"] = "Adoption application not found";
                 return RedirectToAction(nameof(Index));
             }
@@ -67,6 +68,7 @@ namespace Pet.Web.Controllers
             // Check authorization: owner or staff
             if (adoption.UserId != userId && role != "Staff" && role != "Admin")
             {
+                _logger.LogWarning($"Unauthorized access attempt to adoption {id} by user {userId}");
                 TempData["Error"] = "You are not authorized to view this application";
                 return RedirectToAction(nameof(Index));
             }
@@ -116,44 +118,65 @@ namespace Pet.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateAdoptionViewModel model)
         {
+            _logger.LogInformation($"Model received - PetId: {model?.PetId}, PhoneNumber: {model?.PhoneNumber}");
+
             string? userId = HttpContext.Session.GetString("UserId");
             string? email = HttpContext.Session.GetString("Email");
             string? firstName = HttpContext.Session.GetString("FirstName");
             string? lastName = HttpContext.Session.GetString("LastName");
 
+            _logger.LogInformation($"Session data - UserId: {userId}, Email: {email}");
+
             if (string.IsNullOrEmpty(userId))
             {
+                _logger.LogWarning("User not logged in - redirecting to login");
                 TempData["Error"] = "You must be logged in to adopt a pet";
                 return RedirectToAction("Login", "Auth");
             }
 
-            if (!ModelState.IsValid)
+            if (model == null)
             {
+                _logger.LogError("Model is null in Create POST action");
+                TempData["Error"] = "Invalid form data. Please try again.";
+                return RedirectToAction("Index", "Pets");
+            }
+
+            try
+            {
+                _logger.LogInformation($"Calling CreateAdoptionAsync for pet {model.PetId}");
+                AdoptionViewModel? adoption = await _adoptionApiService.CreateAdoptionAsync(
+                    model,
+                    userId,
+                    email ?? "",
+                    firstName ?? "",
+                    lastName ?? ""
+                );
+
+                if (adoption == null)
+                {
+                    _logger.LogError("Failed to create adoption - CreateAdoptionAsync returned null. API call may have failed.");
+                    TempData["Error"] = "Failed to submit adoption application. Please check if the API is running and try again.";
+                    PetViewModel? pet = await _petApiService.GetPetByIdAsync(model.PetId);
+                    ViewBag.PetName = pet?.Name ?? "Unknown";
+                    ViewBag.PetId = model.PetId;
+                    return View(model);
+                }
+
+                _logger.LogInformation($"Adoption created successfully: {adoption.AdoptionId} for pet {model.PetId}");
+                TempData["Success"] = "Adoption application submitted successfully! We'll review it soon.";
+                _logger.LogInformation($"Redirecting to Details page for adoption {adoption.AdoptionId}");
+                return RedirectToAction(nameof(Details), new { id = adoption.AdoptionId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Exception occurred while creating adoption application: {ex.Message}");
+                _logger.LogError($"Stack trace: {ex.StackTrace}");
+                TempData["Error"] = $"An error occurred while submitting your adoption application: {ex.Message}";
                 PetViewModel? pet = await _petApiService.GetPetByIdAsync(model.PetId);
                 ViewBag.PetName = pet?.Name ?? "Unknown";
                 ViewBag.PetId = model.PetId;
                 return View(model);
             }
-
-            AdoptionViewModel? adoption = await _adoptionApiService.CreateAdoptionAsync(
-                model,
-                userId,
-                email ?? "",
-                firstName ?? "",
-                lastName ?? ""
-            );
-
-            if (adoption == null)
-            {
-                TempData["Error"] = "Failed to submit adoption application. Please try again.";
-                PetViewModel? pet = await _petApiService.GetPetByIdAsync(model.PetId);
-                ViewBag.PetName = pet?.Name ?? "Unknown";
-                ViewBag.PetId = model.PetId;
-                return View(model);
-            }
-
-            TempData["Success"] = "Adoption application submitted successfully! We'll review it soon.";
-            return RedirectToAction(nameof(Details), new { id = adoption.AdoptionId });
         }
 
         // POST: /Adoptions/Approve/5
@@ -346,11 +369,26 @@ namespace Pet.Web.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            if (!ModelState.IsValid)
+
+            if (model == null)
             {
+                TempData["Error"] = "Invalid form data. Please try again.";
                 ViewBag.PetName = existingAdoption.PetName;
                 ViewBag.PetId = existingAdoption.PetId;
-                return View(model);
+                return View(new CreateAdoptionViewModel
+                {
+                    PetId = existingAdoption.PetId,
+                    PhoneNumber = existingAdoption.PhoneNumber,
+                    Address = existingAdoption.Address,
+                    HousingType = existingAdoption.HousingType,
+                    HasYard = existingAdoption.HasYard,
+                    HasOtherPets = existingAdoption.HasOtherPets,
+                    OtherPetsDescription = existingAdoption.OtherPetsDescription,
+                    HasChildren = existingAdoption.HasChildren,
+                    ChildrenAges = existingAdoption.ChildrenAges,
+                    EmploymentStatus = existingAdoption.EmploymentStatus,
+                    Reason = existingAdoption.Reason
+                });
             }
 
             bool success = await _adoptionApiService.UpdateAdoptionAsync(id, model);
