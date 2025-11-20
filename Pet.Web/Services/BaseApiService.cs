@@ -90,19 +90,30 @@ namespace Pet.Web.Services
 
                 string json = JsonSerializer.Serialize(data);
                 StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+                
+                string fullUrl = $"{_httpClient.BaseAddress}{endpoint}";
+                _logger.LogInformation($"POSTing to {fullUrl}");
+                _logger.LogDebug($"Request data: {json}");
+                
                 HttpResponseMessage response = await _httpClient.PostAsync(endpoint, content);
 
+                string responseContent = await response.Content.ReadAsStringAsync();
+                
                 if (response.IsSuccessStatusCode)
                 {
-                    string responseContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation($"POST to {endpoint} succeeded with status {response.StatusCode}");
+                    _logger.LogDebug($"Response content: {responseContent}");
                     return JsonSerializer.Deserialize<T>(responseContent, JsonOptions);
                 }
-                _logger.LogWarning($"Failed to POST to {endpoint}: {response.StatusCode}");
+                
+                _logger.LogError($"Failed to POST to {endpoint}: {response.StatusCode}");
+                _logger.LogError($"Response content: {responseContent}");
                 return default;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error POSTing to {endpoint}");
+                _logger.LogError(ex, $"Exception POSTing to {endpoint}: {ex.Message}");
+                _logger.LogError($"Stack trace: {ex.StackTrace}");
                 return default;
             }
         }

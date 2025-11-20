@@ -12,21 +12,25 @@ namespace Pet.Web.Services
 
         public async Task<List<AdoptionViewModel>> GetAllAdoptionsAsync()
         {
+            _logger.LogInformation($"Service: AdoptionApiService, Method: GetAllAdoptionsAsync");
             return await GetListAsync<AdoptionViewModel>("api/adoptions");
         }
 
         public async Task<AdoptionViewModel?> GetAdoptionByIdAsync(string adoptionId)
         {
+            _logger.LogInformation($"Service: AdoptionApiService, Method: GetAdoptionByIdAsync, AdoptionId: {adoptionId}");
             return await GetAsync<AdoptionViewModel>($"api/adoptions/{adoptionId}");
         }
 
         public async Task<List<AdoptionViewModel>> GetAdoptionsByUserIdAsync(string userId)
         {
+            _logger.LogInformation($"Service: AdoptionApiService, Method: GetAdoptionsByUserIdAsync, UserId: {userId}");
             return await GetListAsync<AdoptionViewModel>($"api/adoptions/user/{userId}");
         }
 
         public async Task<AdoptionViewModel?> CreateAdoptionAsync(CreateAdoptionViewModel model, string userId, string userEmail, string firstName, string lastName)
         {
+            _logger.LogInformation($"Service: AdoptionApiService, Method: CreateAdoptionAsync, PetId: {model?.PetId ?? "unknown"}, UserId: {userId}");
             object requestData = new
             {
                 model.PetId,
@@ -52,6 +56,7 @@ namespace Pet.Web.Services
 
         public async Task<bool> UpdateAdoptionAsync(string adoptionId, CreateAdoptionViewModel model)
         {
+            _logger.LogInformation($"Service: AdoptionApiService, Method: UpdateAdoptionAsync, AdoptionId: {adoptionId}");
             object requestData = new
             {
                 model.PhoneNumber,
@@ -71,6 +76,7 @@ namespace Pet.Web.Services
 
         public async Task<bool> UpdateAdoptionStatusAsync(string adoptionId, string status, string reviewedBy, string? reviewNotes = null)
         {
+            _logger.LogInformation($"Service: AdoptionApiService, Method: UpdateAdoptionStatusAsync, AdoptionId: {adoptionId}, Status: {status}");
             object requestData = new
             {
                 Status = status,
@@ -83,6 +89,7 @@ namespace Pet.Web.Services
 
         public async Task<bool> DeleteAdoptionAsync(string adoptionId)
         {
+            _logger.LogInformation($"Service: AdoptionApiService, Method: DeleteAdoptionAsync, AdoptionId: {adoptionId}");
             return await DeleteAsync($"api/adoptions/{adoptionId}", requireAuth: true);
         }
     }

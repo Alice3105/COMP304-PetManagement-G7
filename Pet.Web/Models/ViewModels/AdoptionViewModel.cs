@@ -32,10 +32,10 @@ namespace Pet.Web.Models.ViewModels
         public string PhoneNumber { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public string HousingType { get; set; } = string.Empty;
-        public bool HasYard { get; set; }
-        public bool HasOtherPets { get; set; }
+        public bool HasYard { get; set; } = false;
+        public bool HasOtherPets { get; set; } = false;
         public string OtherPetsDescription { get; set; } = string.Empty;
-        public bool HasChildren { get; set; }
+        public bool HasChildren { get; set; } = false;
         public string ChildrenAges { get; set; } = string.Empty;
         public string EmploymentStatus { get; set; } = string.Empty;
         public string Reason { get; set; } = string.Empty;

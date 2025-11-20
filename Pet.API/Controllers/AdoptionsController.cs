@@ -35,10 +35,11 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<AdoptionResponse>>> GetAllAdoptions()
         {
+            _logger.LogInformation($"Endpoint: GetAllAdoptions, Method: GET");
             try
             {
-                var adoptions = await _adoptionRepository.GetAllAsync();
-                var adoptionResponses = _mapper.Map<IEnumerable<AdoptionResponse>>(adoptions);
+                IEnumerable<Adoption> adoptions = await _adoptionRepository.GetAllAsync();
+                IEnumerable<AdoptionResponse> adoptionResponses = _mapper.Map<IEnumerable<AdoptionResponse>>(adoptions);
                 return Ok(adoptionResponses);
             }
             catch (Exception ex)
@@ -56,16 +57,17 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<AdoptionResponse>> GetAdoptionById([FromRoute] string id)
         {
+            _logger.LogInformation($"Endpoint: GetAdoptionById, Method: GET, AdoptionId: {id}");
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { message = "Adoption id is required." });
 
             try
             {
-                var adoption = await _adoptionRepository.GetByIdAsync(id);
+                Adoption? adoption = await _adoptionRepository.GetByIdAsync(id);
                 if (adoption == null)
                     return NotFound(new { message = "Adoption not found" });
 
-                var adoptionResponse = _mapper.Map<AdoptionResponse>(adoption);
+                AdoptionResponse adoptionResponse = _mapper.Map<AdoptionResponse>(adoption);
                 return Ok(adoptionResponse);
             }
             catch (Exception ex)
@@ -82,10 +84,11 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAdoptionsByUserId([FromRoute] string userId)
         {
+            _logger.LogInformation($"Endpoint: GetAdoptionsByUserId, Method: GET, UserId: {userId}");
             try
             {
-                var adoptions = await _adoptionRepository.GetByUserIdAsync(userId);
-                var adoptionResponses = _mapper.Map<IEnumerable<AdoptionResponse>>(adoptions);
+                IEnumerable<Adoption> adoptions = await _adoptionRepository.GetByUserIdAsync(userId);
+                IEnumerable<AdoptionResponse> adoptionResponses = _mapper.Map<IEnumerable<AdoptionResponse>>(adoptions);
                 return Ok(adoptionResponses);
             }
             catch (Exception ex)
@@ -102,10 +105,11 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAdoptionsByPetId([FromRoute] string petId)
         {
+            _logger.LogInformation($"Endpoint: GetAdoptionsByPetId, Method: GET, PetId: {petId}");
             try
             {
-                var adoptions = await _adoptionRepository.GetByPetIdAsync(petId);
-                var adoptionResponses = _mapper.Map<IEnumerable<AdoptionResponse>>(adoptions);
+                IEnumerable<Adoption> adoptions = await _adoptionRepository.GetByPetIdAsync(petId);
+                IEnumerable<AdoptionResponse> adoptionResponses = _mapper.Map<IEnumerable<AdoptionResponse>>(adoptions);
                 return Ok(adoptionResponses);
             }
             catch (Exception ex)
@@ -122,6 +126,7 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateAdoption([FromBody] CreateAdoptionRequest request)
         {
+            _logger.LogInformation($"Endpoint: CreateAdoption, Method: POST");
             if (request == null)
                 return BadRequest(new { message = "Adoption data is required." });
 
@@ -135,13 +140,22 @@ namespace Pet.API.Controllers
                 }
 
                 // Map DTO to Entity
-                var adoption = _mapper.Map<Adoption>(request);
+                Adoption adoption = _mapper.Map<Adoption>(request);
                 adoption.PetName = pet.Name;
 
-                var createdAdoption = await _adoptionRepository.CreateAsync(adoption);
+                Adoption createdAdoption = await _adoptionRepository.CreateAsync(adoption);
+
+                // Update pet status to Pending when an adoption application is created
+                // Only update if pet is not already Adopted or MedicalHold
+                if (pet.Status != PetStatus.Adopted.ToStringValue() && pet.Status != PetStatus.MedicalHold.ToStringValue())
+                {
+                    pet.Status = PetStatus.Pending.ToStringValue();
+                    await _petRepository.UpdateAsync(pet);
+                    _logger.LogInformation($"Pet {pet.PetId} status updated to Pending after adoption application created");
+                }
 
                 // Map Entity to Response DTO
-                var adoptionResponse = _mapper.Map<AdoptionResponse>(createdAdoption);
+                AdoptionResponse adoptionResponse = _mapper.Map<AdoptionResponse>(createdAdoption);
 
                 _logger.LogInformation($"Adoption application created: {createdAdoption.AdoptionId} for pet {pet.Name}");
 
@@ -164,6 +178,7 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateAdoptionStatus([FromRoute] string id, [FromBody] UpdateAdoptionStatusRequest request)
         {
+            _logger.LogInformation($"Endpoint: UpdateAdoptionStatus, Method: PATCH, AdoptionId: {id}");
             try
             {
                 Adoption updatedAdoption = await _adoptionRepository.UpdateStatusAsync(
@@ -216,7 +231,7 @@ namespace Pet.API.Controllers
                 _logger.LogInformation($"Adoption {id} status updated to {request.Status} by {request.ReviewedBy}");
 
                 // Map Entity to Response DTO
-                var adoptionResponse = _mapper.Map<AdoptionResponse>(updatedAdoption);
+                AdoptionResponse adoptionResponse = _mapper.Map<AdoptionResponse>(updatedAdoption);
                 return Ok(adoptionResponse);
             }
             catch (Exception ex)
@@ -235,6 +250,7 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<AdoptionResponse>> UpdateAdoption(string id, [FromBody] UpdateAdoptionRequest request)
         {
+            _logger.LogInformation($"Endpoint: UpdateAdoption, Method: PUT, AdoptionId: {id}");
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { message = "Adoption id is required." });
 
@@ -243,12 +259,12 @@ namespace Pet.API.Controllers
 
             try
             {
-                var existingAdoption = await _adoptionRepository.GetByIdAsync(id);
+                Adoption? existingAdoption = await _adoptionRepository.GetByIdAsync(id);
                 if (existingAdoption == null)
                     return NotFound(new { message = "Adoption not found" });
 
                 // Map DTO to Entity, preserving non-editable fields
-                var adoption = _mapper.Map<Adoption>(request);
+                Adoption adoption = _mapper.Map<Adoption>(request);
                 adoption.AdoptionId = id;
                 adoption.PetId = existingAdoption.PetId;
                 adoption.PetName = existingAdoption.PetName;
@@ -262,10 +278,10 @@ namespace Pet.API.Controllers
                 adoption.ReviewedBy = existingAdoption.ReviewedBy;
                 adoption.ReviewNotes = existingAdoption.ReviewNotes;
 
-                var updatedAdoption = await _adoptionRepository.UpdateAsync(adoption);
+                Adoption updatedAdoption = await _adoptionRepository.UpdateAsync(adoption);
 
                 // Map Entity to Response DTO
-                var adoptionResponse = _mapper.Map<AdoptionResponse>(updatedAdoption);
+                AdoptionResponse adoptionResponse = _mapper.Map<AdoptionResponse>(updatedAdoption);
 
                 Logger.LogInformation($"Adoption {id} updated");
                 return Ok(adoptionResponse);
@@ -286,16 +302,44 @@ namespace Pet.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteAdoption(string id)
         {
+            _logger.LogInformation($"Endpoint: DeleteAdoption, Method: DELETE, AdoptionId: {id}");
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { message = "Adoption id is required." });
 
             try
             {
-                var existingAdoption = await _adoptionRepository.GetByIdAsync(id);
+                Adoption? existingAdoption = await _adoptionRepository.GetByIdAsync(id);
                 if (existingAdoption == null)
                     return NotFound(new { message = "Adoption not found" });
 
+                string petId = existingAdoption.PetId;
                 await _adoptionRepository.DeleteAsync(id);
+
+                // Update pet status if needed after deletion
+                PetEntity? pet = await _petRepository.GetByIdAsync(petId);
+                if (pet != null)
+                {
+                    // Check remaining adoptions for this pet
+                    IEnumerable<Adoption> remainingAdoptions = await _adoptionRepository.GetByPetIdAsync(petId);
+                    
+                    bool hasApprovedAdoption = remainingAdoptions.Any(a => a.Status == "Approved");
+                    bool hasPendingAdoption = remainingAdoptions.Any(a => a.Status == "Pending");
+                    
+                    // Only update status if pet is not Adopted or MedicalHold
+                    if (pet.Status != PetStatus.Adopted.ToStringValue() && pet.Status != PetStatus.MedicalHold.ToStringValue())
+                    {
+                        PetStatus newStatus = (hasApprovedAdoption, hasPendingAdoption) switch
+                        {
+                            (true, _) => PetStatus.Adopted,      // Another adoption is approved, set to Adopted
+                            (false, true) => PetStatus.Pending,   // There are pending adoptions, keep as Pending
+                            _ => PetStatus.Available              // No other adoptions, make pet Available
+                        };
+                        
+                        pet.Status = newStatus.ToStringValue();
+                        await _petRepository.UpdateAsync(pet);
+                        _logger.LogInformation($"Pet {petId} status updated to {newStatus} after adoption deletion");
+                    }
+                }
 
                 Logger.LogInformation($"Adoption {id} deleted");
                 return NoContent();

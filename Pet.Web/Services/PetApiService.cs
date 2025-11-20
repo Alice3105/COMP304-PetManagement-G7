@@ -14,16 +14,19 @@ namespace Pet.Web.Services
 
         public async Task<List<PetViewModel>> GetAllPetsAsync()
         {
+            _logger.LogInformation($"Service: PetApiService, Method: GetAllPetsAsync");
             return await GetListAsync<PetViewModel>("api/pets", requireAuth: true);
         }
 
         public async Task<PetViewModel?> GetPetByIdAsync(string petId)
         {
+            _logger.LogInformation($"Service: PetApiService, Method: GetPetByIdAsync, PetId: {petId}");
             return await GetAsync<PetViewModel>($"api/pets/{petId}", requireAuth: true);
         }
 
         public async Task<PetViewModel?> CreatePetAsync(CreatePetViewModel model)
         {
+            _logger.LogInformation($"Service: PetApiService, Method: CreatePetAsync, PetName: {model?.Name ?? "unknown"}");
             try
             {
                 _logger.LogInformation($"CreatePetAsync called for pet: {model.Name}, Species: {model.Species}, Breed: {model.Breed}");
@@ -85,7 +88,7 @@ namespace Pet.Web.Services
                 {
                     string content = await response.Content.ReadAsStringAsync();
                     _logger.LogInformation($"Response content length: {content.Length} characters");
-                    var pet = JsonSerializer.Deserialize<PetViewModel>(content, JsonOptions);
+                    PetViewModel? pet = JsonSerializer.Deserialize<PetViewModel>(content, JsonOptions);
                     _logger.LogInformation($"Pet created successfully: {pet?.PetId} - {pet?.Name}");
                     return pet;
                 }
@@ -103,11 +106,13 @@ namespace Pet.Web.Services
 
         public async Task<bool> UpdatePetAsync(string petId, PetViewModel model)
         {
+            _logger.LogInformation($"Service: PetApiService, Method: UpdatePetAsync, PetId: {petId}");
             return await PutAsync($"api/pets/{petId}", model, requireAuth: true);
         }
 
         public async Task<bool> DeletePetAsync(string petId)
         {
+            _logger.LogInformation($"Service: PetApiService, Method: DeletePetAsync, PetId: {petId}");
             return await DeleteAsync($"api/pets/{petId}", requireAuth: true);
         }
 
