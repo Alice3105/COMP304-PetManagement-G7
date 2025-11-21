@@ -91,7 +91,6 @@ namespace Pet.API.Services
                 { "FirstName", new AttributeValue { S = user.FirstName } },
                 { "LastName", new AttributeValue { S = user.LastName } },
                 { "Role", new AttributeValue { S = user.Role } },
-                { "ApiKey", new AttributeValue { S = user.ApiKey } },
                 { "CreatedDate", new AttributeValue { S = user.CreatedDate.ToString("o") } },
                 { "IsActive", new AttributeValue { BOOL = user.IsActive } }
             };
@@ -140,7 +139,6 @@ namespace Pet.API.Services
                 FirstName = item.GetValueOrDefault("FirstName")?.S ?? "",
                 LastName = item.GetValueOrDefault("LastName")?.S ?? "",
                 Role = item.GetValueOrDefault("Role")?.S ?? "Public",
-                ApiKey = item.GetValueOrDefault("ApiKey")?.S ?? "",
                 CreatedDate = item.GetValueOrDefault("CreatedDate")?.S != null 
                     ? DateTime.Parse(item["CreatedDate"].S) 
                     : DateTime.UtcNow,

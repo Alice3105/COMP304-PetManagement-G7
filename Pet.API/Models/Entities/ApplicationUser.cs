@@ -10,7 +10,6 @@ namespace Pet.API.Models.Entities
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Role { get; set; } = RoleConstants.DefaultRole;
-        public string ApiKey { get; set; } = string.Empty;
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedDate { get; set; }
         public bool IsActive { get; set; } = true;

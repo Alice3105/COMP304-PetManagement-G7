@@ -230,6 +230,94 @@ namespace Pet.API.Controllers
             }
         }
 
+        // PATCH: api/pets/{id}
+        // Update pet with multipart form data (supports file upload)
+        [HttpPatch("{id}")]
+        [ProducesResponseType(typeof(PetResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<PetResponse>> PatchWithFile(string id)
+        {
+            _logger.LogInformation($"Endpoint: PatchWithFile, Method: PATCH, PetId: {id}");
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { message = "Pet id is required." });
+
+            if (!Request.HasFormContentType)
+                return BadRequest(new { message = "Request must be multipart/form-data." });
+
+            try
+            {
+                PetEntity? existingPet = await _petRepository.GetByIdAsync(id);
+                if (existingPet == null)
+                    return NotFound(new { message = "Pet not found" });
+
+                IFormCollection form = await Request.ReadFormAsync();
+
+                // Create new pet entity with updated properties from form data
+                PetEntity pet = new PetEntity
+                {
+                    PetId = existingPet.PetId,
+                    Name = !string.IsNullOrWhiteSpace(form["Name"].ToString()) ? form["Name"].ToString()! : existingPet.Name,
+                    Species = !string.IsNullOrWhiteSpace(form["Species"].ToString()) ? form["Species"].ToString()! : existingPet.Species,
+                    Breed = !string.IsNullOrWhiteSpace(form["Breed"].ToString()) ? form["Breed"].ToString()! : existingPet.Breed,
+                    Age = int.TryParse(form["Age"].ToString(), out int age) ? age : existingPet.Age,
+                    Gender = !string.IsNullOrWhiteSpace(form["Gender"].ToString()) ? form["Gender"].ToString()! : existingPet.Gender,
+                    Size = !string.IsNullOrWhiteSpace(form["Size"].ToString()) ? form["Size"].ToString()! : existingPet.Size,
+                    Color = !string.IsNullOrWhiteSpace(form["Color"].ToString()) ? form["Color"].ToString()! : existingPet.Color,
+                    Description = !string.IsNullOrWhiteSpace(form["Description"].ToString()) ? form["Description"].ToString()! : existingPet.Description,
+                    Status = !string.IsNullOrWhiteSpace(form["Status"].ToString()) ? form["Status"].ToString()! : existingPet.Status,
+                    Vaccinated = bool.TryParse(form["Vaccinated"].ToString(), out bool vaccinated) ? vaccinated : existingPet.Vaccinated,
+                    Neutered = bool.TryParse(form["Neutered"].ToString(), out bool neutered) ? neutered : existingPet.Neutered,
+                    GoodWithKids = bool.TryParse(form["GoodWithKids"].ToString(), out bool goodWithKids) ? goodWithKids : existingPet.GoodWithKids,
+                    GoodWithPets = bool.TryParse(form["GoodWithPets"].ToString(), out bool goodWithPets) ? goodWithPets : existingPet.GoodWithPets,
+                    IntakeDate = existingPet.IntakeDate,
+                    CreatedDate = existingPet.CreatedDate,
+                    PhotoUrls = existingPet.PhotoUrls != null ? new List<string>(existingPet.PhotoUrls) : new List<string>()
+                };
+
+                // Handle new photo upload - prepend to PhotoUrls list
+                if (form.Files != null && form.Files.Count > 0)
+                {
+                    IFormFile? photoFile = form.Files["Photo"];
+                    if (photoFile != null && photoFile.Length > 0)
+                    {
+                        try
+                        {
+                            string folder = $"pets/{pet.PetId}/";
+                            string fileName = $"{pet.Name.Replace(" ", "-")}-{Guid.NewGuid()}{Path.GetExtension(photoFile.FileName)}";
+                            string photoUrl = await _fileUploadService.UploadImageAsync(photoFile.OpenReadStream(), fileName, folder);
+                            
+                            // Prepend new photo to the beginning of the list
+                            pet.PhotoUrls = pet.PhotoUrls.ToList();
+                            pet.PhotoUrls.Insert(0, photoUrl);
+                            
+                            _logger.LogInformation($"New photo uploaded for pet {pet.PetId}: {photoUrl}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, $"Failed to upload photo for pet {pet.PetId}");
+                        }
+                    }
+                }
+
+                pet.UpdatedDate = DateTime.UtcNow;
+
+                PetEntity updatedPet = await _petRepository.UpdateAsync(pet);
+                
+                // Map Entity to Response DTO
+                PetResponse petResponse = _mapper.Map<PetResponse>(updatedPet);
+                
+                Logger.LogInformation($"Pet {id} updated with PATCH");
+                return Ok(petResponse);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"Error updating Pet {id} with PATCH");
+                return StatusCode(500, new { message = "Error updating Pet", error = ex.Message });
+            }
+        }
+
         // PUT: api/pets/{id}
         // Update an existing pet
         [HttpPut("{id}")]
@@ -258,6 +346,12 @@ namespace Pet.API.Controllers
                 pet.IntakeDate = existingPet.IntakeDate;
                 pet.CreatedDate = existingPet.CreatedDate;
                 pet.UpdatedDate = DateTime.UtcNow;
+                
+                // Preserve existing PhotoUrls if not provided in the update request
+                if (pet.PhotoUrls == null || pet.PhotoUrls.Count == 0)
+                {
+                    pet.PhotoUrls = existingPet.PhotoUrls ?? new List<string>();
+                }
 
                 PetEntity updatedPet = await _petRepository.UpdateAsync(pet);
                 

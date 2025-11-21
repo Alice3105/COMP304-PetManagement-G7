@@ -29,11 +29,14 @@ namespace Pet.Web.Services
             _logger.LogInformation($"Service: PetApiService, Method: CreatePetAsync, PetName: {model?.Name ?? "unknown"}");
             try
             {
+                if (model == null)
+                {
+                    _logger.LogError("CreatePetAsync called with null model");
+                    return null;
+                }
+                
                 _logger.LogInformation($"CreatePetAsync called for pet: {model.Name}, Species: {model.Species}, Breed: {model.Breed}");
                 
-                string? apiKey = _httpContextAccessor?.HttpContext?.Session?.GetString("ApiKey");
-                _logger.LogInformation($"API Key present in session: {!string.IsNullOrEmpty(apiKey)}");
-
                 using MultipartFormDataContent formData = new MultipartFormDataContent();
                 AddFormField(formData, "Name", model.Name);
                 AddFormField(formData, "Species", model.Species);
@@ -69,15 +72,21 @@ namespace Pet.Web.Services
                     Content = formData
                 };
 
-                // Set Authorization header on the request message
-                if (!string.IsNullOrEmpty(apiKey))
+                // Add user headers for authentication
+                if (_httpContextAccessor?.HttpContext != null)
                 {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-                    _logger.LogInformation("Authorization header set on request");
-                }
-                else
-                {
-                    _logger.LogWarning("No API key found in session - request will be sent without authorization");
+                    string? userEmail = _httpContextAccessor.HttpContext.Session.GetString("Email");
+                    string? userRole = _httpContextAccessor.HttpContext.Session.GetString("Role");
+                    
+                    if (!string.IsNullOrEmpty(userEmail))
+                    {
+                        request.Headers.Add("X-User-Email", userEmail);
+                    }
+                    
+                    if (!string.IsNullOrEmpty(userRole))
+                    {
+                        request.Headers.Add("X-User-Role", userRole);
+                    }
                 }
 
                 HttpResponseMessage response = await _httpClient.SendAsync(request);
@@ -107,7 +116,97 @@ namespace Pet.Web.Services
         public async Task<bool> UpdatePetAsync(string petId, PetViewModel model)
         {
             _logger.LogInformation($"Service: PetApiService, Method: UpdatePetAsync, PetId: {petId}");
+            
+            // If photo is provided, use multipart form data (PATCH)
+            if (model.Photo != null && model.Photo.Length > 0)
+            {
+                return await UpdatePetWithPhotoAsync(petId, model);
+            }
+            
+            // Otherwise use JSON (PUT)
             return await PutAsync($"api/pets/{petId}", model, requireAuth: true);
+        }
+
+        private async Task<bool> UpdatePetWithPhotoAsync(string petId, PetViewModel model)
+        {
+            _logger.LogInformation($"Service: PetApiService, Method: UpdatePetWithPhotoAsync, PetId: {petId}");
+            try
+            {
+                if (model == null)
+                {
+                    _logger.LogError("UpdatePetWithPhotoAsync called with null model");
+                    return false;
+                }
+
+                using MultipartFormDataContent formData = new MultipartFormDataContent();
+                AddFormField(formData, "Name", model.Name);
+                AddFormField(formData, "Species", model.Species);
+                AddFormField(formData, "Breed", model.Breed);
+                AddFormField(formData, "Age", model.Age.ToString());
+                AddFormField(formData, "Gender", model.Gender);
+                AddFormField(formData, "Size", model.Size);
+                AddFormField(formData, "Color", model.Color);
+                AddFormField(formData, "Description", model.Description);
+                AddFormField(formData, "Status", model.Status);
+                AddFormField(formData, "Vaccinated", model.Vaccinated.ToString());
+                AddFormField(formData, "Neutered", model.Neutered.ToString());
+                AddFormField(formData, "GoodWithKids", model.GoodWithKids.ToString());
+                AddFormField(formData, "GoodWithPets", model.GoodWithPets.ToString());
+
+                // Add photo file
+                if (model.Photo != null && model.Photo.Length > 0)
+                {
+                    _logger.LogInformation($"Photo file provided for update: {model.Photo.FileName}, Size: {model.Photo.Length} bytes, ContentType: {model.Photo.ContentType}");
+                    StreamContent fileContent = new StreamContent(model.Photo.OpenReadStream());
+                    fileContent.Headers.ContentType = new MediaTypeHeaderValue(model.Photo.ContentType);
+                    formData.Add(fileContent, "Photo", model.Photo.FileName);
+                }
+
+                string endpoint = $"api/pets/{petId}";
+                string fullUrl = $"{_httpClient.BaseAddress}{endpoint}";
+                _logger.LogInformation($"Sending PATCH request to: {fullUrl}");
+
+                using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Patch, endpoint)
+                {
+                    Content = formData
+                };
+
+                // Add user headers for authentication
+                if (_httpContextAccessor?.HttpContext != null)
+                {
+                    string? userEmail = _httpContextAccessor.HttpContext.Session.GetString("Email");
+                    string? userRole = _httpContextAccessor.HttpContext.Session.GetString("Role");
+                    
+                    if (!string.IsNullOrEmpty(userEmail))
+                    {
+                        request.Headers.Add("X-User-Email", userEmail);
+                    }
+                    
+                    if (!string.IsNullOrEmpty(userRole))
+                    {
+                        request.Headers.Add("X-User-Role", userRole);
+                    }
+                }
+
+                HttpResponseMessage response = await _httpClient.SendAsync(request);
+
+                _logger.LogInformation($"Response received: StatusCode={response.StatusCode}, IsSuccessStatusCode={response.IsSuccessStatusCode}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation($"Pet {petId} updated successfully with photo");
+                    return true;
+                }
+
+                string errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning($"Failed to update pet with photo: StatusCode={response.StatusCode}, Response={errorContent}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating pet with photo via API. Exception: {ex.Message}, StackTrace: {ex.StackTrace}");
+                return false;
+            }
         }
 
         public async Task<bool> DeletePetAsync(string petId)

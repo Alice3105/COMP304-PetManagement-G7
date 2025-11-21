@@ -12,7 +12,7 @@
                     <h4 class="mb-0">Edit Pet: @Model.Name</h4>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Edit" asp-route-id="@Model.PetId" method="post">
+                    <form asp-action="Edit" asp-route-id="@Model.PetId" method="post" enctype="multipart/form-data">
                         @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="PetId" />
                         <input type="hidden" asp-for="CreatedDate" />
@@ -99,14 +99,32 @@
                         @if (Model.PhotoUrls != null && Model.PhotoUrls.Any())
                         {
                             <div class="mb-3">
-                                <label class="form-label">Current Photo</label>
-                                <div>
-                                    <img src="@Model.PhotoUrls.First()" alt="@Model.Name" class="img-thumbnail" style="max-height: 200px;">
+                                <label class="form-label">Current Photos (@Model.PhotoUrls.Count)</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var photoUrl in Model.PhotoUrls)
+                                    {
+                                        <img src="@photoUrl" alt="@Model.Name" class="img-thumbnail" style="max-height: 150px; max-width: 150px; object-fit: cover;">
+                                    }
                                 </div>
+                                <small class="text-muted">These photos will be preserved when you update the pet.</small>
                             </div>
                         }
 
-                        <input type="hidden" asp-for="PhotoUrls" />
+                        <div class="mb-3">
+                            <label asp-for="Photo" class="form-label">Upload New Photo</label>
+                            <input asp-for="Photo" type="file" class="form-control" accept="image/*" />
+                            <small class="text-muted">Upload a new photo to add it as the first photo. Existing photos will be preserved.</small>
+                            <span asp-validation-for="Photo" class="text-danger"></span>
+                        </div>
+
+                        @* Preserve PhotoUrls by creating indexed hidden inputs *@
+                        @if (Model.PhotoUrls != null)
+                        {
+                            for (int i = 0; i < Model.PhotoUrls.Count; i++)
+                            {
+                                <input type="hidden" asp-for="PhotoUrls[i]" />
+                            }
+                        }
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -144,6 +162,8 @@
                             </div>
                         </div>
 
+                        @await Html.PartialAsync("_MedicalRecordFormSection", Model)
+
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-warning">Update Pet</button>
                             <a asp-action="Details" asp-route-id="@Model.PetId" class="btn btn-secondary">Cancel</a>
@@ -165,5 +185,5 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    @await Html.PartialAsync("_MedicalRecordsScripts")
+    @await Html.PartialAsync("_MedicalRecordScripts")
 }

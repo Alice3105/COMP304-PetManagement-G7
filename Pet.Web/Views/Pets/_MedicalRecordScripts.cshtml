@@ -1,6 +1,50 @@
+@* Medical Records JavaScript - Handles both new record form and existing record operations *@
 <script>
+    // ============================================
+    // Section 1: New Medical Record Form Toggle
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        const createMedicalRecordCheckbox = document.getElementById('createMedicalRecord');
+        const medicalRecordSection = document.getElementById('medicalRecordSection');
+        const recordTypeSelect = document.getElementById('MedicalRecordType');
+        const vaccineNameSection = document.getElementById('vaccineNameSection');
+
+        if (createMedicalRecordCheckbox) {
+            createMedicalRecordCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    medicalRecordSection.style.display = 'block';
+                } else {
+                    medicalRecordSection.style.display = 'none';
+                    const medicalRecordFields = medicalRecordSection.querySelectorAll('input, select, textarea');
+                    medicalRecordFields.forEach(field => {
+                        if (field.type === 'checkbox') {
+                            field.checked = false;
+                        } else if (field.type === 'number') {
+                            field.value = '';
+                        } else {
+                            field.value = '';
+                        }
+                    });
+                }
+            });
+        }
+
+        if (recordTypeSelect) {
+            recordTypeSelect.addEventListener('change', function() {
+                if (this.value === 'Vaccination') {
+                    vaccineNameSection.style.display = 'block';
+                } else {
+                    vaccineNameSection.style.display = 'none';
+                }
+            });
+        }
+    });
+
+    // ============================================
+    // Section 2: Existing Medical Records (Edit/Delete)
+    // ============================================
     $(document).ready(function() {
-        // Handle medical record form submission
+        // Handle medical record form submission (Edit existing record)
         $('.medical-record-form').on('submit', function(e) {
             e.preventDefault();
             

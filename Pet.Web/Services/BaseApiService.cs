@@ -29,17 +29,26 @@ namespace Pet.Web.Services
         }
 
         /// <summary>
-        /// Adds authentication header from session if available
+        /// Adds user identification headers from session if available (for admin endpoints)
         /// </summary>
-        protected void AddAuthHeader()
+        protected void AddUserHeaders()
         {
             if (_httpContextAccessor?.HttpContext == null)
                 return;
 
-            string? apiKey = _httpContextAccessor.HttpContext.Session.GetString("ApiKey");
-            if (!string.IsNullOrEmpty(apiKey))
+            string? userEmail = _httpContextAccessor.HttpContext.Session.GetString("Email");
+            string? userRole = _httpContextAccessor.HttpContext.Session.GetString("Role");
+            
+            if (!string.IsNullOrEmpty(userEmail))
             {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                _httpClient.DefaultRequestHeaders.Remove("X-User-Email");
+                _httpClient.DefaultRequestHeaders.Add("X-User-Email", userEmail);
+            }
+            
+            if (!string.IsNullOrEmpty(userRole))
+            {
+                _httpClient.DefaultRequestHeaders.Remove("X-User-Role");
+                _httpClient.DefaultRequestHeaders.Add("X-User-Role", userRole);
             }
         }
 
@@ -51,7 +60,7 @@ namespace Pet.Web.Services
             try
             {
                 if (requireAuth)
-                    AddAuthHeader();
+                    AddUserHeaders();
 
                 HttpResponseMessage response = await _httpClient.GetAsync(endpoint);
                 if (response.IsSuccessStatusCode)
@@ -86,7 +95,7 @@ namespace Pet.Web.Services
             try
             {
                 if (requireAuth)
-                    AddAuthHeader();
+                    AddUserHeaders();
 
                 string json = JsonSerializer.Serialize(data);
                 StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -126,7 +135,7 @@ namespace Pet.Web.Services
             try
             {
                 if (requireAuth)
-                    AddAuthHeader();
+                    AddUserHeaders();
 
                 string json = JsonSerializer.Serialize(data);
                 StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -148,7 +157,7 @@ namespace Pet.Web.Services
             try
             {
                 if (requireAuth)
-                    AddAuthHeader();
+                    AddUserHeaders();
 
                 string json = JsonSerializer.Serialize(data);
                 StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -174,7 +183,7 @@ namespace Pet.Web.Services
             try
             {
                 if (requireAuth)
-                    AddAuthHeader();
+                    AddUserHeaders();
 
                 HttpResponseMessage response = await _httpClient.DeleteAsync(endpoint);
                 return response.IsSuccessStatusCode;

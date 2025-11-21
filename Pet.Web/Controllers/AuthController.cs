@@ -52,8 +52,7 @@ namespace Pet.Web.Controllers
             HttpContext.Session.SetString("Email", userSession.Email);
             HttpContext.Session.SetString("FirstName", userSession.FirstName);
             HttpContext.Session.SetString("LastName", userSession.LastName);
-            HttpContext.Session.SetString("Role", userSession.Role);        // ?? Role stored here
-            HttpContext.Session.SetString("ApiKey", userSession.ApiKey);
+            HttpContext.Session.SetString("Role", userSession.Role);
 
             TempData["Success"] = $"Welcome back, {userSession.FirstName}!";
             _logger.LogInformation($"User logged in: {userSession.Email}");
@@ -103,8 +102,7 @@ namespace Pet.Web.Controllers
             HttpContext.Session.SetString("Email", userSession.Email);
             HttpContext.Session.SetString("FirstName", userSession.FirstName);
             HttpContext.Session.SetString("LastName", userSession.LastName);
-            HttpContext.Session.SetString("Role", userSession.Role);       // ?? Role stored here too
-            HttpContext.Session.SetString("ApiKey", userSession.ApiKey);
+            HttpContext.Session.SetString("Role", userSession.Role);
 
             TempData["Success"] = $"Welcome, {userSession.FirstName}! Your account has been created.";
             _logger.LogInformation($"New user registered: {userSession.Email}");
@@ -132,6 +130,62 @@ namespace Pet.Web.Controllers
         {
             // View shown when user lacks proper Staff/Admin role
             return View();
+        }
+
+        // GET: /Auth/Profile
+        [HttpGet]
+        public IActionResult Profile()
+        {
+            // Redirect to login if not authenticated
+            if (HttpContext.Session.GetString("UserId") == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            return View(new ChangePasswordViewModel());
+        }
+
+        // POST: /Auth/Profile
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Profile(ChangePasswordViewModel model)
+        {
+            // Redirect to login if not authenticated
+            if (HttpContext.Session.GetString("UserId") == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            if (model.NewPassword != model.ConfirmPassword)
+            {
+                ModelState.AddModelError("ConfirmPassword", "New password and confirmation do not match");
+                return View(model);
+            }
+
+            if (model.NewPassword.Length < 6)
+            {
+                ModelState.AddModelError("NewPassword", "New password must be at least 6 characters long");
+                return View(model);
+            }
+
+            bool success = await _authApiService.ChangePasswordAsync(model);
+
+            if (success)
+            {
+                TempData["Success"] = "Password changed successfully!";
+                _logger.LogInformation($"Password changed for user: {HttpContext.Session.GetString("Email")}");
+                return RedirectToAction("Profile");
+            }
+            else
+            {
+                TempData["Error"] = "Failed to change password. Please check your current password and try again.";
+                return View(model);
+            }
         }
     }
 }
