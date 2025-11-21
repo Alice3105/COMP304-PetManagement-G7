@@ -23,6 +23,12 @@ namespace Pet.Web.Models.ViewModels
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
-        public string ApiKey { get; set; } = string.Empty;
+    }
+
+    public class ChangePasswordViewModel
+    {
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

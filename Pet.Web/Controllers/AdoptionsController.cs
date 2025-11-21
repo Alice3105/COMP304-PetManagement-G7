@@ -414,6 +414,8 @@ namespace Pet.Web.Controllers
                 return NotFound();
 
             string? userId = HttpContext.Session.GetString("UserId");
+            string? role = HttpContext.Session.GetString("Role");
+            bool isStaff = (role == "Staff" || role == "Admin");
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -429,18 +431,21 @@ namespace Pet.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Check authorization: only the owner can delete
-            if (adoption.UserId != userId)
+            // Check authorization: owner can delete their own Pending applications, Staff/Admin can delete any
+            if (!isStaff)
             {
-                TempData["Error"] = "You are not authorized to delete this application";
-                return RedirectToAction(nameof(Index));
-            }
+                // Public users can only delete their own Pending applications
+                if (adoption.UserId != userId)
+                {
+                    TempData["Error"] = "You are not authorized to delete this application";
+                    return RedirectToAction(nameof(Index));
+                }
 
-            // Check status: only Pending applications can be deleted
-            if (adoption.Status != "Pending")
-            {
-                TempData["Error"] = "You can only delete applications with Pending status";
-                return RedirectToAction(nameof(Details), new { id });
+                if (adoption.Status != "Pending")
+                {
+                    TempData["Error"] = "You can only delete applications with Pending status";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
             }
 
             bool success = await _adoptionApiService.DeleteAdoptionAsync(id);

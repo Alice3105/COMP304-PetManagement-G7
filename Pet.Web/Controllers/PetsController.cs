@@ -69,6 +69,19 @@ namespace Pet.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
             
+            // Clear validation errors for medical record fields if CreateMedicalRecord is false
+            // This ensures optional medical record fields don't prevent pet creation
+            if (!model.CreateMedicalRecord)
+            {
+                ModelState.Remove(nameof(model.MedicalRecordType));
+                ModelState.Remove(nameof(model.MedicalRecordDate));
+                ModelState.Remove(nameof(model.MedicalRecordDescription));
+                ModelState.Remove(nameof(model.MedicalRecordVaccineName));
+                ModelState.Remove(nameof(model.MedicalRecordNextDueDate));
+                ModelState.Remove(nameof(model.MedicalRecordCost));
+                ModelState.Remove(nameof(model.MedicalRecordNotes));
+            }
+            
             if (!ModelState.IsValid)
             {
                 var errors = ModelState
@@ -163,7 +176,7 @@ namespace Pet.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [SessionAuthorize("Staff", "Admin")]
-        public async Task<IActionResult> Edit(string id, PetViewModel model)
+        public async Task<IActionResult> Edit(string id, PetViewModel model, IFormCollection form)
         {
             if (id != model.PetId)
             {
@@ -173,6 +186,9 @@ namespace Pet.Web.Controllers
 
             if (!ModelState.IsValid)
             {
+                // Fetch medical records for this pet
+                List<MedicalRecordViewModel> medicalRecords = await _medicalRecordApiService.GetMedicalRecordsByPetIdAsync(id);
+                ViewBag.MedicalRecords = medicalRecords;
                 return View(model);
             }
 
@@ -181,10 +197,71 @@ namespace Pet.Web.Controllers
             if (!success)
             {
                 TempData["Error"] = "Failed to update pet. Please try again.";
+                // Fetch medical records for this pet
+                List<MedicalRecordViewModel> medicalRecords = await _medicalRecordApiService.GetMedicalRecordsByPetIdAsync(id);
+                ViewBag.MedicalRecords = medicalRecords;
                 return View(model);
             }
 
-            TempData["Success"] = $"Pet '{model.Name}' updated successfully!";
+            // Check if a new medical record should be created
+            bool createMedicalRecord = form.ContainsKey("CreateMedicalRecord") && form["CreateMedicalRecord"].ToString() == "true";
+            string? medicalRecordType = form.ContainsKey("MedicalRecordType") ? form["MedicalRecordType"].ToString() : null;
+
+            if (createMedicalRecord && !string.IsNullOrWhiteSpace(medicalRecordType))
+            {
+                string? userId = HttpContext.Session.GetString("UserId");
+                string firstName = HttpContext.Session.GetString("FirstName") ?? "Staff";
+                string lastName = HttpContext.Session.GetString("LastName") ?? "Member";
+                string veterinarianName = $"Dr. {firstName} {lastName}";
+
+                DateTime? recordDate = null;
+                if (form.ContainsKey("MedicalRecordDate") && DateTime.TryParse(form["MedicalRecordDate"].ToString(), out DateTime parsedDate))
+                {
+                    recordDate = parsedDate;
+                }
+
+                DateTime? nextDueDate = null;
+                if (form.ContainsKey("MedicalRecordNextDueDate") && DateTime.TryParse(form["MedicalRecordNextDueDate"].ToString(), out DateTime parsedNextDue))
+                {
+                    nextDueDate = parsedNextDue;
+                }
+
+                decimal? cost = null;
+                if (form.ContainsKey("MedicalRecordCost") && decimal.TryParse(form["MedicalRecordCost"].ToString(), out decimal parsedCost))
+                {
+                    cost = parsedCost;
+                }
+
+                MedicalRecordViewModel medicalRecord = new MedicalRecordViewModel
+                {
+                    PetId = model.PetId,
+                    PetName = model.Name,
+                    RecordType = medicalRecordType ?? "",
+                    RecordDate = recordDate ?? DateTime.UtcNow,
+                    VeterinarianId = userId ?? "",
+                    VeterinarianName = veterinarianName,
+                    Description = form.ContainsKey("MedicalRecordDescription") ? form["MedicalRecordDescription"].ToString() ?? "" : "",
+                    VaccineName = form.ContainsKey("MedicalRecordVaccineName") ? form["MedicalRecordVaccineName"].ToString() ?? "" : "",
+                    NextDueDate = nextDueDate,
+                    Cost = cost ?? 0,
+                    Notes = form.ContainsKey("MedicalRecordNotes") ? form["MedicalRecordNotes"].ToString() ?? "" : ""
+                };
+
+                MedicalRecordViewModel? createdRecord = await _medicalRecordApiService.CreateMedicalRecordAsync(medicalRecord);
+                if (createdRecord != null)
+                {
+                    TempData["Success"] = $"Pet '{model.Name}' and medical record updated successfully!";
+                }
+                else
+                {
+                    TempData["Success"] = $"Pet '{model.Name}' updated successfully, but failed to create medical record.";
+                }
+            }
+            else
+            {
+                TempData["Success"] = $"Pet '{model.Name}' updated successfully!";
+            }
+
             return RedirectToAction(nameof(Details), new { id = model.PetId });
         }
 
@@ -211,14 +288,14 @@ namespace Pet.Web.Controllers
         // POST: /Pets/DeleteMedicalRecord
         [HttpPost]
         [SessionAuthorize("Staff", "Admin")]
-        public async Task<IActionResult> DeleteMedicalRecord(string recordId)
+        public async Task<IActionResult> DeleteMedicalRecord([FromBody] DeleteMedicalRecordRequest request)
         {
-            if (string.IsNullOrEmpty(recordId))
+            if (request == null || string.IsNullOrEmpty(request.RecordId))
             {
                 return Json(new { success = false, message = "Medical Record id is required." });
             }
 
-            bool success = await _medicalRecordApiService.DeleteMedicalRecordAsync(recordId);
+            bool success = await _medicalRecordApiService.DeleteMedicalRecordAsync(request.RecordId);
 
             if (!success)
             {
@@ -259,5 +336,10 @@ namespace Pet.Web.Controllers
     {
         public string RecordId { get; set; } = string.Empty;
         public MedicalRecordViewModel Model { get; set; } = new();
+    }
+
+    public class DeleteMedicalRecordRequest
+    {
+        public string RecordId { get; set; } = string.Empty;
     }
 }

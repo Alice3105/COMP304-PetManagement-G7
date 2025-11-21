@@ -14,6 +14,7 @@ namespace Pet.Web.Models.ViewModels
         public string Status { get; set; } = "Available";
         public DateTime IntakeDate { get; set; }
         public List<string> PhotoUrls { get; set; } = new List<string>();
+        public IFormFile? Photo { get; set; }
         public bool Vaccinated { get; set; }
         public bool Neutered { get; set; }
         public bool GoodWithKids { get; set; }
