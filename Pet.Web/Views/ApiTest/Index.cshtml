@@ -1,0 +1,206 @@
+@{
+    ViewData["Title"] = "API Integration Test";
+    var config = ViewBag.Configuration as dynamic;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>API Integration Test</h2>
+            <p class="text-muted">This page demonstrates that the web app is correctly configured to consume the Pet.API</p>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">API Base URL:</dt>
+                        <dd class="col-sm-8">
+                            <code>@(config?.ApiBaseUrl ?? "Not configured")</code>
+                        </dd>
+                        
+                        <dt class="col-sm-4">API Key:</dt>
+                        <dd class="col-sm-8">
+                            @(config?.ApiKey ?? "Not configured")
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Services Status</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li>
+                            @if (config?.ServicesRegistered?.PetApiService == true)
+                            {
+                                <span class="badge bg-success">✓</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">✗</span>
+                            }
+                            PetApiService
+                        </li>
+                        <li>
+                            @if (config?.ServicesRegistered?.AuthApiService == true)
+                            {
+                                <span class="badge bg-success">✓</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">✗</span>
+                            }
+                            AuthApiService
+                        </li>
+                        <li>
+                            @if (config?.ServicesRegistered?.AdoptionApiService == true)
+                            {
+                                <span class="badge bg-success">✓</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">✗</span>
+                            }
+                            AdoptionApiService
+                        </li>
+                        <li>
+                            @if (config?.ServicesRegistered?.MedicalRecordApiService == true)
+                            {
+                                <span class="badge bg-success">✓</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">✗</span>
+                            }
+                            MedicalRecordApiService
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>API Tests</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button id="testConnectivity" class="btn btn-primary">Test Connectivity</button>
+                        <button id="testEndpoints" class="btn btn-secondary">Test All Endpoints</button>
+                        <button id="getConfiguration" class="btn btn-info">Get Configuration</button>
+                    </div>
+                    <div id="testResults" class="mt-3">
+                        <pre id="resultsOutput" class="bg-light p-3" style="min-height: 200px; max-height: 500px; overflow-y: auto;"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>API Endpoints</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Pets API</h6>
+                    <ul>
+                        <li><code>GET /api/pets</code> - Get all pets</li>
+                        <li><code>GET /api/pets/{id}</code> - Get pet by ID</li>
+                        <li><code>POST /api/pets</code> - Create pet (multipart/form-data)</li>
+                        <li><code>PUT /api/pets/{id}</code> - Update pet</li>
+                        <li><code>PATCH /api/pets/{id}</code> - Update pet with photo</li>
+                        <li><code>DELETE /api/pets/{id}</code> - Delete pet</li>
+                    </ul>
+
+                    <h6 class="mt-3">Adoptions API</h6>
+                    <ul>
+                        <li><code>GET /api/adoptions</code> - Get all adoptions</li>
+                        <li><code>GET /api/adoptions/{id}</code> - Get adoption by ID</li>
+                        <li><code>GET /api/adoptions/user/{userId}</code> - Get adoptions by user</li>
+                        <li><code>POST /api/adoptions</code> - Create adoption</li>
+                        <li><code>PUT /api/adoptions/{id}</code> - Update adoption</li>
+                        <li><code>PATCH /api/adoptions/{id}/status</code> - Update adoption status</li>
+                        <li><code>DELETE /api/adoptions/{id}</code> - Delete adoption</li>
+                    </ul>
+
+                    <h6 class="mt-3">Medical Records API</h6>
+                    <ul>
+                        <li><code>GET /api/medicalrecords/pet/{petId}</code> - Get records by pet</li>
+                        <li><code>POST /api/medicalrecords</code> - Create record</li>
+                        <li><code>PUT /api/medicalrecords/{id}</code> - Update record</li>
+                        <li><code>DELETE /api/medicalrecords/{id}</code> - Delete record</li>
+                    </ul>
+
+                    <h6 class="mt-3">Auth API</h6>
+                    <ul>
+                        <li><code>POST /api/auth/register</code> - Register user</li>
+                        <li><code>POST /api/auth/login</code> - Login user</li>
+                        <li><code>GET /api/auth/users</code> - Get all users (Admin)</li>
+                        <li><code>PUT /api/auth/users/{userId}</code> - Update user (Admin)</li>
+                        <li><code>DELETE /api/auth/users/{userId}</code> - Delete user (Admin)</li>
+                        <li><code>PATCH /api/auth/password</code> - Change password</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('testConnectivity').addEventListener('click', async function() {
+            const output = document.getElementById('resultsOutput');
+            output.textContent = 'Testing connectivity...';
+            
+            try {
+                const response = await fetch('@Url.Action("TestConnectivity", "ApiTest")');
+                const data = await response.json();
+                output.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                output.textContent = 'Error: ' + error.message;
+            }
+        });
+
+        document.getElementById('testEndpoints').addEventListener('click', async function() {
+            const output = document.getElementById('resultsOutput');
+            output.textContent = 'Testing endpoints...';
+            
+            try {
+                const response = await fetch('@Url.Action("TestEndpoints", "ApiTest")');
+                const data = await response.json();
+                output.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                output.textContent = 'Error: ' + error.message;
+            }
+        });
+
+        document.getElementById('getConfiguration').addEventListener('click', async function() {
+            const output = document.getElementById('resultsOutput');
+            output.textContent = 'Fetching configuration...';
+            
+            try {
+                const response = await fetch('@Url.Action("Configuration", "ApiTest")');
+                const data = await response.json();
+                output.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                output.textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+}
+
