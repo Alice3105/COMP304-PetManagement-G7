@@ -62,13 +62,17 @@ namespace Pet.Web.Services
                 if (requireAuth)
                     AddUserHeaders();
 
+                // Log the full URL being constructed for debugging
+                string fullUrl = $"{_httpClient.BaseAddress}{endpoint}";
+                _logger.LogInformation($"GET request to: {fullUrl} (BaseAddress: {_httpClient.BaseAddress}, Endpoint: {endpoint})");
+
                 HttpResponseMessage response = await _httpClient.GetAsync(endpoint);
                 if (response.IsSuccessStatusCode)
                 {
                     string content = await response.Content.ReadAsStringAsync();
                     return JsonSerializer.Deserialize<T>(content, JsonOptions);
                 }
-                _logger.LogWarning($"Failed to fetch from {endpoint}: {response.StatusCode}");
+                _logger.LogWarning($"Failed to fetch from {fullUrl}: {response.StatusCode}");
                 return default;
             }
             catch (Exception ex)

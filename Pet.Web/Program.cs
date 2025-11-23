@@ -29,27 +29,48 @@ builder.Services.AddSession(options =>
 // Add HttpContextAccessor for session access in services
 builder.Services.AddHttpContextAccessor();
 
-// Configure HttpClient for Pet.API
+// Configure HttpClient for Pet.API localhost
+// string apiBaseUrl = builder.Configuration["PetApiBaseUrl"] ?? "https://localhost:7148";
+// builder.Services.AddHttpClient<IAuthApiService, AuthApiService>(client =>
+// {
+//     client.BaseAddress = new Uri(apiBaseUrl);
+// });
+
+// builder.Services.AddHttpClient<IPetApiService, PetApiService>(client =>
+// {
+//     client.BaseAddress = new Uri(apiBaseUrl);
+// });
+
+// builder.Services.AddHttpClient<IAdoptionApiService, AdoptionApiService>(client =>
+// {
+//     client.BaseAddress = new Uri(apiBaseUrl);
+// });
+
+// builder.Services.AddHttpClient<IMedicalRecordApiService, MedicalRecordApiService>(client =>
+// {
+//     client.BaseAddress = new Uri(apiBaseUrl);
+// });
+
+// Configure HttpClient for Pet.API through Apigee
 string apiBaseUrl = builder.Configuration["PetApiBaseUrl"] ?? "https://localhost:7148";
-builder.Services.AddHttpClient<IAuthApiService, AuthApiService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
+string apiKey = builder.Configuration["ApigeeApiKey"] ?? "";
 
-builder.Services.AddHttpClient<IPetApiService, PetApiService>(client =>
+// Configure all API services with base URL and API key header
+Action<HttpClient> configureClient = client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-});
+    
+    // Add API key header for Apigee (if configured)
+    if (!string.IsNullOrEmpty(apiKey))
+    {
+        client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+    }
+};
 
-builder.Services.AddHttpClient<IAdoptionApiService, AdoptionApiService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
-
-builder.Services.AddHttpClient<IMedicalRecordApiService, MedicalRecordApiService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
+builder.Services.AddHttpClient<IAuthApiService, AuthApiService>(configureClient);
+builder.Services.AddHttpClient<IPetApiService, PetApiService>(configureClient);
+builder.Services.AddHttpClient<IAdoptionApiService, AdoptionApiService>(configureClient);
+builder.Services.AddHttpClient<IMedicalRecordApiService, MedicalRecordApiService>(configureClient);
 
 WebApplication app = builder.Build();
 
