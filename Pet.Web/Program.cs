@@ -55,10 +55,24 @@ builder.Services.AddHttpContextAccessor();
 string apiBaseUrl = builder.Configuration["PetApiBaseUrl"] ?? "https://localhost:7148";
 string apiKey = builder.Configuration["ApigeeApiKey"] ?? "";
 
+// Log the configuration value being read
+System.Console.WriteLine($"[DEBUG] PetApiBaseUrl from config: '{apiBaseUrl}'");
+
+// Ensure the base URL ends with a trailing slash for proper URL combination
+// HttpClient requires BaseAddress to end with '/' when combining with relative paths
+if (!apiBaseUrl.EndsWith("/"))
+{
+    apiBaseUrl += "/";
+    System.Console.WriteLine($"[DEBUG] PetApiBaseUrl after adding trailing slash: '{apiBaseUrl}'");
+}
+
 // Configure all API services with base URL and API key header
 Action<HttpClient> configureClient = client =>
 {
-    client.BaseAddress = new Uri(apiBaseUrl);
+    var baseUri = new Uri(apiBaseUrl);
+    client.BaseAddress = baseUri;
+    System.Console.WriteLine($"[DEBUG] HttpClient BaseAddress set to: '{client.BaseAddress}'");
+    System.Console.WriteLine($"[DEBUG] BaseAddress AbsoluteUri: '{client.BaseAddress.AbsoluteUri}'");
     
     // Add API key header for Apigee (if configured)
     if (!string.IsNullOrEmpty(apiKey))

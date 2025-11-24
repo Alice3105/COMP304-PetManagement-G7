@@ -63,8 +63,11 @@ namespace Pet.Web.Services
                     AddUserHeaders();
 
                 // Log the full URL being constructed for debugging
-                string fullUrl = $"{_httpClient.BaseAddress}{endpoint}";
-                _logger.LogInformation($"GET request to: {fullUrl} (BaseAddress: {_httpClient.BaseAddress}, Endpoint: {endpoint})");
+                // Use Uri constructor to see the actual URL that will be used
+                var fullUri = _httpClient.BaseAddress != null 
+                    ? new Uri(_httpClient.BaseAddress, endpoint) 
+                    : new Uri(endpoint, UriKind.RelativeOrAbsolute);
+                _logger.LogInformation($"GET request - BaseAddress: '{_httpClient.BaseAddress?.AbsoluteUri ?? "null"}', Endpoint: '{endpoint}', Full URL: '{fullUri.AbsoluteUri}'");
 
                 HttpResponseMessage response = await _httpClient.GetAsync(endpoint);
                 if (response.IsSuccessStatusCode)
@@ -104,8 +107,11 @@ namespace Pet.Web.Services
                 string json = JsonSerializer.Serialize(data);
                 StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
                 
-                string fullUrl = $"{_httpClient.BaseAddress}{endpoint}";
-                _logger.LogInformation($"POSTing to {fullUrl}");
+                // Log the full URL being constructed for debugging
+                var fullUri = _httpClient.BaseAddress != null 
+                    ? new Uri(_httpClient.BaseAddress, endpoint) 
+                    : new Uri(endpoint, UriKind.RelativeOrAbsolute);
+                _logger.LogInformation($"POST request - BaseAddress: '{_httpClient.BaseAddress?.AbsoluteUri ?? "null"}', Endpoint: '{endpoint}', Full URL: '{fullUri.AbsoluteUri}'");
                 _logger.LogDebug($"Request data: {json}");
                 
                 HttpResponseMessage response = await _httpClient.PostAsync(endpoint, content);
