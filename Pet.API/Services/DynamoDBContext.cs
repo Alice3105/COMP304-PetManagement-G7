@@ -22,13 +22,24 @@ namespace Pet.API.Services
 
             var accessKey = _configuration["AWS:AccessKey"];
             var secretKey = _configuration["AWS:SecretKey"];
-            var region = _configuration["AWS:Region"];
+            var region = _configuration["AWS:Region"] ?? "us-east-1";
 
-            _client = new AmazonDynamoDBClient(
-                accessKey,
-                secretKey,
-                Amazon.RegionEndpoint.GetBySystemName(region ?? "us-east-1")
-            );
+            // If credentials are provided in config, use them; otherwise use default credential chain (IAM roles, env vars, etc.)
+            if (!string.IsNullOrWhiteSpace(accessKey) && !string.IsNullOrWhiteSpace(secretKey))
+            {
+                _client = new AmazonDynamoDBClient(
+                    accessKey,
+                    secretKey,
+                    Amazon.RegionEndpoint.GetBySystemName(region)
+                );
+            }
+            else
+            {
+                // Use default credential chain (IAM roles, environment variables, etc.)
+                _client = new AmazonDynamoDBClient(
+                    Amazon.RegionEndpoint.GetBySystemName(region)
+                );
+            }
 
             UsersTableName = _configuration["AWS:DynamoDB:UsersTable"] ?? "PetShelter-Users";
             PetsTableName = _configuration["AWS:DynamoDB:PetsTable"] ?? "PetShelter-Pets";

@@ -29,27 +29,62 @@ builder.Services.AddSession(options =>
 // Add HttpContextAccessor for session access in services
 builder.Services.AddHttpContextAccessor();
 
-// Configure HttpClient for Pet.API
+// Configure HttpClient for Pet.API localhost
+// string apiBaseUrl = builder.Configuration["PetApiBaseUrl"] ?? "https://localhost:7148";
+// builder.Services.AddHttpClient<IAuthApiService, AuthApiService>(client =>
+// {
+//     client.BaseAddress = new Uri(apiBaseUrl);
+// });
+
+// builder.Services.AddHttpClient<IPetApiService, PetApiService>(client =>
+// {
+//     client.BaseAddress = new Uri(apiBaseUrl);
+// });
+
+// builder.Services.AddHttpClient<IAdoptionApiService, AdoptionApiService>(client =>
+// {
+//     client.BaseAddress = new Uri(apiBaseUrl);
+// });
+
+// builder.Services.AddHttpClient<IMedicalRecordApiService, MedicalRecordApiService>(client =>
+// {
+//     client.BaseAddress = new Uri(apiBaseUrl);
+// });
+
+// Configure HttpClient for Pet.API through Apigee
 string apiBaseUrl = builder.Configuration["PetApiBaseUrl"] ?? "https://localhost:7148";
-builder.Services.AddHttpClient<IAuthApiService, AuthApiService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
+string apiKey = builder.Configuration["ApigeeApiKey"] ?? "";
 
-builder.Services.AddHttpClient<IPetApiService, PetApiService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
+// Log the configuration value being read
+System.Console.WriteLine($"[DEBUG] PetApiBaseUrl from config: '{apiBaseUrl}'");
 
-builder.Services.AddHttpClient<IAdoptionApiService, AdoptionApiService>(client =>
+// Ensure the base URL ends with a trailing slash for proper URL combination
+// HttpClient requires BaseAddress to end with '/' when combining with relative paths
+if (!apiBaseUrl.EndsWith("/"))
 {
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
+    apiBaseUrl += "/";
+    System.Console.WriteLine($"[DEBUG] PetApiBaseUrl after adding trailing slash: '{apiBaseUrl}'");
+}
 
-builder.Services.AddHttpClient<IMedicalRecordApiService, MedicalRecordApiService>(client =>
+// Configure all API services with base URL and API key header
+Action<HttpClient> configureClient = client =>
 {
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
+    var baseUri = new Uri(apiBaseUrl);
+    client.BaseAddress = baseUri;
+    System.Console.WriteLine($"[DEBUG] HttpClient BaseAddress set to: '{client.BaseAddress}'");
+    System.Console.WriteLine($"[DEBUG] BaseAddress AbsoluteUri: '{client.BaseAddress.AbsoluteUri}'");
+    
+    // Add API key header for Apigee (if configured)
+    if (!string.IsNullOrEmpty(apiKey))
+    {
+        client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+    }
+};
+
+builder.Services.AddHttpClient<IAuthApiService, AuthApiService>(configureClient);
+builder.Services.AddHttpClient<IPetApiService, PetApiService>(configureClient);
+builder.Services.AddHttpClient<IAdoptionApiService, AdoptionApiService>(configureClient);
+builder.Services.AddHttpClient<IMedicalRecordApiService, MedicalRecordApiService>(configureClient);
 
 WebApplication app = builder.Build();
 

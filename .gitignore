@@ -402,3 +402,8 @@ appsettings.json
 appsettings.*.json
 
 /Pet.Web/appsettings.Development.json
+
+# Environment variables with credentials
+.env
+.env.local
+.env.*.local

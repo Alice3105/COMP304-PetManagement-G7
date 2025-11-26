@@ -62,13 +62,20 @@ namespace Pet.Web.Services
                 if (requireAuth)
                     AddUserHeaders();
 
+                // Log the full URL being constructed for debugging
+                // Use Uri constructor to see the actual URL that will be used
+                var fullUri = _httpClient.BaseAddress != null 
+                    ? new Uri(_httpClient.BaseAddress, endpoint) 
+                    : new Uri(endpoint, UriKind.RelativeOrAbsolute);
+                _logger.LogInformation($"GET request - BaseAddress: '{_httpClient.BaseAddress?.AbsoluteUri ?? "null"}', Endpoint: '{endpoint}', Full URL: '{fullUri.AbsoluteUri}'");
+
                 HttpResponseMessage response = await _httpClient.GetAsync(endpoint);
                 if (response.IsSuccessStatusCode)
                 {
                     string content = await response.Content.ReadAsStringAsync();
                     return JsonSerializer.Deserialize<T>(content, JsonOptions);
                 }
-                _logger.LogWarning($"Failed to fetch from {endpoint}: {response.StatusCode}");
+                _logger.LogWarning($"Failed to fetch from {fullUrl}: {response.StatusCode}");
                 return default;
             }
             catch (Exception ex)
@@ -100,8 +107,11 @@ namespace Pet.Web.Services
                 string json = JsonSerializer.Serialize(data);
                 StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
                 
-                string fullUrl = $"{_httpClient.BaseAddress}{endpoint}";
-                _logger.LogInformation($"POSTing to {fullUrl}");
+                // Log the full URL being constructed for debugging
+                var fullUri = _httpClient.BaseAddress != null 
+                    ? new Uri(_httpClient.BaseAddress, endpoint) 
+                    : new Uri(endpoint, UriKind.RelativeOrAbsolute);
+                _logger.LogInformation($"POST request - BaseAddress: '{_httpClient.BaseAddress?.AbsoluteUri ?? "null"}', Endpoint: '{endpoint}', Full URL: '{fullUri.AbsoluteUri}'");
                 _logger.LogDebug($"Request data: {json}");
                 
                 HttpResponseMessage response = await _httpClient.PostAsync(endpoint, content);

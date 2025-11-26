@@ -23,11 +23,22 @@ namespace Pet.API.Services
             var secretKey = _configuration["AWS:SecretKey"];
             var region = _configuration["AWS:S3:Region"] ?? _configuration["AWS:Region"] ?? "us-east-1";
 
-            _s3Client = new AmazonS3Client(
-                accessKey,
-                secretKey,
-                Amazon.RegionEndpoint.GetBySystemName(region)
-            );
+            // If credentials are provided in config, use them; otherwise use default credential chain (IAM roles, env vars, etc.)
+            if (!string.IsNullOrWhiteSpace(accessKey) && !string.IsNullOrWhiteSpace(secretKey))
+            {
+                _s3Client = new AmazonS3Client(
+                    accessKey,
+                    secretKey,
+                    Amazon.RegionEndpoint.GetBySystemName(region)
+                );
+            }
+            else
+            {
+                // Use default credential chain (IAM roles, environment variables, etc.)
+                _s3Client = new AmazonS3Client(
+                    Amazon.RegionEndpoint.GetBySystemName(region)
+                );
+            }
 
             _bucketName = _configuration["AWS:S3:BucketName"] ?? "petshelter-images";
             _defaultFolder = _configuration["AWS:S3:PetPhotosFolder"] ?? "pets/";
