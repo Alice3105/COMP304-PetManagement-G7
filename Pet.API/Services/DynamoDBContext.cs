@@ -20,11 +20,14 @@ namespace Pet.API.Services
         {
             _configuration = configuration;
 
-            var region = _configuration["AWS:Region"] ?? "us-east-1";
+            var accessKey = _configuration["AWS:AccessKey"];
+            var secretKey = _configuration["AWS:SecretKey"];
+            var region = _configuration["AWS:Region"];
 
-            
             _client = new AmazonDynamoDBClient(
-                Amazon.RegionEndpoint.GetBySystemName(region)
+                accessKey,
+                secretKey,
+                Amazon.RegionEndpoint.GetBySystemName(region ?? "us-east-1")
             );
 
             UsersTableName = _configuration["AWS:DynamoDB:UsersTable"] ?? "PetShelter-Users";
@@ -32,7 +35,6 @@ namespace Pet.API.Services
             AdoptionsTableName = _configuration["AWS:DynamoDB:AdoptionsTable"] ?? "PetShelter-Adoptions";
             MedicalRecordsTableName = _configuration["AWS:DynamoDB:MedicalRecordsTable"] ?? "PetShelter-MedicalRecords";
         }
-
 
         public async Task<ApplicationUser?> GetUserByIdAsync(string userId)
         {
